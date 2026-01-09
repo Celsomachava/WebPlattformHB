@@ -1,0 +1,201 @@
+// Part 2 - Sections 9-15 to be appended to PruefprotokollComplete.tsx
+
+// Add after the Filterwechsel section and before closing </div></div>:
+
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '3px' }}>Einschränkungen der Sicht und Bewegungsfreiheit</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <CheckboxRow label="Bewegungseinschränkung des Fahrers" field="bewegungseinschraenkung" />
+            <CheckboxRow label="Sichtbeschränkung des Fahrers" field="sichtbeschraenkung" />
+            <CheckboxRow label="Original Spiegel ausreichend" field="original_spiegel_ok" />
+            <CheckboxRow label="Ultraschall - Warneinrichtung bzw. Videoüberwachung" field="ultraschall_warnsystem" />
+            <CheckboxRow label="Einschränkung der Original - Wartungsrichtlinien" field="einschraenkung_richtlinien" />
+            <CheckboxRow label="Zugänge und Öffnungen nach DIN ISO 2860 beeinträchtigt (Türen, Klappen, Öffnungen)" field="tuer_oeffnungen_beeintraechtigt" />
+          </tbody>
+        </table>
+
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '3px' }}>Überdruck Überwachungssystem</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <CheckboxRow label="Kontrollanzeige für Überdruck in der Kabine vorhanden" field="kontrollanzeige_vorhanden" />
+            <CheckboxRow label="optische Warneinrichtung für Druckabfall bzw. -100 Pascal vorhanden" field="optische_warnung" />
+            <CheckboxRow label="akustische Warneinrichtung für Druckabfall bzw. Anstieg vorhanden" field="akustische_warnung" />
+            <CheckboxRow label="Ansprechzeit der Warneinrichtung weniger als 5 Sekunden" field="ansprechzeit_ok" />
+            <CheckboxRow label="Alarmeinstellung - unter Grenzwert 100 Pascal" field="alarm_untergrenze" />
+            <CheckboxRow label="Alarmeinstellung - oberer Grenzwert 300 Pascal" field="alarm_obergrenze" />
+          </tbody>
+        </table>
+
+        <div style={{ pageBreakBefore: 'always' }}></div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '2px solid #000', paddingBottom: '5px' }}>
+          <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>Prüf-/Übernahmeprotokoll für Atemluftversorgungs-/Klimaanlagen</h2>
+          <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{data.kalenderjahr}</div>
+        </div>
+        <div style={{ fontSize: '10px', textAlign: 'center', marginBottom: '10px' }}>nach Merkblatt DGUV 201-004</div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <CheckboxRow label="Kontrollanzeige Partikelfilter vorhanden" field="kontrollanzeige_partikelfilter" />
+            <CheckboxRow label="Kontrollanzeige Aktivkohlefilter vorhanden" field="kontrollanzeige_aktivkohlefilter" />
+            <CheckboxRow label="Betriebsstundenzähler vorhanden" field="betriebsstundenzaehler_vorhanden" />
+            <CheckboxRow label="Betriebsanzeige 'Grün' außen sichtbar montiert" field="betriebsanzeige_gruen_sichtbar" />
+          </tbody>
+        </table>
+
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '3px' }}>Sicherheitsmaßnahmen in der Fahrerkabine</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <CheckboxRow label="Filtersystem schaltet automatisch beim Start des Hauptmotors ein" field="auto_einschaltung_hauptmotor" />
+            <CheckboxRow label="Hinweisschild vorhanden 'Bei geschlossener Kabine muss die Frischluftversorgung in Betrieb sein'" field="hinweisschild_frischluft" />
+            <CheckboxRow label="Fluchtfiltergerät vorhanden" field="fluchtfiltergeraet_vorhanden" />
+            <CheckboxRow label="Funkverkehr vorhanden" field="funkverkehr_vorhanden" />
+            <CheckboxRow label="Vorhandener Notausstieg Notausstieg blockiert (z.B. Fenster/Türen abgedichtet)" field="notausstieg_blockiert" />
+            <CheckboxRow label="Notausstieg nachträglich gewährleistet durch Nothammer" field="notausstieg_nothammer" />
+            <CheckboxRow label="Lärmgrenzwert von Klima- und Filteranlage unter 85dB am Fahrerohr" field="laermgrenzwert_unter_85db" />
+          </tbody>
+        </table>
+
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '3px' }}>Kabinenabdichtung</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <CheckboxRow label="Abdichtung der Kabine ausreichend" field="kabine_abdichtung_ok" />
+            <CheckboxRow label="Hebe - oder Schiebefenster Bedienteil entfernt/blockiert" field="hebeschiebefenster_blockiert" />
+            <CheckboxRow label="Außenluftzufuhr für Heizung abgedichtet" field="aussenluft_heizung_abgedichtet" />
+            <CheckboxRow label="Durchführung von Schläuchen, Kabeln usw. abgedichtet" field="durchfuehrungen_abgedichtet" />
+          </tbody>
+        </table>
+
+        <div style={{ marginBottom: '10px', fontSize: '11px' }}>
+          Überdruck bei laufendem Motor: ........................... Luftzufuhr bei laufendem Motor: .......................
+        </div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 'bold', fontSize: '11px' }} rowSpan={2}>Klimaanlage</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }} colSpan={3}>vorhanden/ausreichend:</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.klima_typ_hersteller !== ''} onChange={(e) => handleUpdate('klima_typ_hersteller', e.target.checked ? 'ja' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>ja</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.klima_typ_hersteller === 'nein'} onChange={(e) => handleUpdate('klima_typ_hersteller', e.target.checked ? 'nein' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>nein</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }} colSpan={7}>
+                Typ/Hersteller: <input type="text" value={data.klima_typ_hersteller} onChange={(e) => handleUpdate('klima_typ_hersteller', e.target.value)} style={{ width: '80%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }}>Kondensator:</td>
+              <td style={{ padding: '4px', border: '1px solid #000' }} colSpan={7}>
+                <input type="text" value={data.klima_kondensator} onChange={(e) => handleUpdate('klima_kondensator', e.target.value)} placeholder="Kältemittel:" style={{ width: '100%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }}>Verdampfer:</td>
+              <td style={{ padding: '4px', border: '1px solid #000' }} colSpan={7}>
+                <input type="text" value={data.klima_verdampfer} onChange={(e) => handleUpdate('klima_verdampfer', e.target.value)} placeholder="Kompressor:" style={{ width: '100%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }}>Umluftwirkung vorhanden:</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.klima_umluftwirkung === 'ja'} onChange={(e) => handleUpdate('klima_umluftwirkung', e.target.checked ? 'ja' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>ja</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.klima_umluftwirkung === 'nein'} onChange={(e) => handleUpdate('klima_umluftwirkung', e.target.checked ? 'nein' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }} colSpan={4}>nein</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 'bold', fontSize: '11px' }} rowSpan={2}>Heizung</td>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }} colSpan={3}>vorhanden/ausreichend:</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.heizung_typ_hersteller !== ''} onChange={(e) => handleUpdate('heizung_typ_hersteller', e.target.checked ? 'ja' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>ja</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.heizung_typ_hersteller === 'nein'} onChange={(e) => handleUpdate('heizung_typ_hersteller', e.target.checked ? 'nein' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>nein</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }} colSpan={7}>
+                Hersteller/Typ: <input type="text" value={data.heizung_typ_hersteller} onChange={(e) => handleUpdate('heizung_typ_hersteller', e.target.value)} style={{ width: '80%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: '4px 8px', border: '1px solid #000', fontSize: '11px' }}>Heizung im Umluftbetrieb:</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.heizung_umluftbetrieb === 'ja'} onChange={(e) => handleUpdate('heizung_umluftbetrieb', e.target.checked ? 'ja' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>ja</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.heizung_umluftbetrieb === 'nein'} onChange={(e) => handleUpdate('heizung_umluftbetrieb', e.target.checked ? 'nein' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }} colSpan={4}>nein</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '3px' }}>Mängel/Bemerkungen:</div>
+        <textarea
+          value={data.maengel_bemerkungen}
+          onChange={(e) => handleUpdate('maengel_bemerkungen', e.target.value)}
+          rows={4}
+          style={{ width: '100%', border: '1px solid #000', padding: '8px', fontSize: '11px', marginBottom: '10px' }}
+        />
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '8px', border: '1px solid #000', fontSize: '11px' }}>Nachkontrolle, nach Mängelabstellung, erforderlich:</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.nachkontrolle_erforderlich === 'ja'} onChange={(e) => handleUpdate('nachkontrolle_erforderlich', e.target.checked ? 'ja' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>ja</td>
+              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center', width: '30px' }}>
+                <input type="checkbox" checked={data.nachkontrolle_erforderlich === 'nein'} onChange={(e) => handleUpdate('nachkontrolle_erforderlich', e.target.checked ? 'nein' : '')} />
+              </td>
+              <td style={{ padding: '4px', border: '1px solid #000', fontSize: '10px', width: '30px', textAlign: 'center' }}>nein</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '8px', border: '1px solid #000', fontSize: '11px', width: '50%' }}>
+                <div style={{ marginBottom: '30px' }}>
+                  Ort: <input type="text" value={data.ort} onChange={(e) => handleUpdate('ort', e.target.value)} style={{ width: '80%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+                </div>
+                <div>
+                  Auftraggeber bzw. Betreiber: <input type="text" value={data.auftraggeber_unterschrift} onChange={(e) => handleUpdate('auftraggeber_unterschrift', e.target.value)} style={{ width: '60%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+                </div>
+              </td>
+              <td style={{ padding: '8px', border: '1px solid #000', fontSize: '11px', width: '50%' }}>
+                <div style={{ marginBottom: '30px' }}>
+                  Datum: <input type="date" value={data.protokoll_datum} onChange={(e) => handleUpdate('protokoll_datum', e.target.value)} style={{ width: '70%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+                </div>
+                <div>
+                  Servicetechniker: <input type="text" value={data.servicetechniker_unterschrift} onChange={(e) => handleUpdate('servicetechniker_unterschrift', e.target.value)} style={{ width: '70%', border: 'none', borderBottom: '1px dotted #000', fontSize: '11px' }} />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style={{ fontSize: '9px', textAlign: 'center', borderTop: '1px solid #000', paddingTop: '5px' }}>
+          Heduschka GmbH - Buchwälder Str. 28 - 01968 Senftenberg<br />
+          Es gelten unsere allgemeinen Geschäftsbedingungen (AGB), die Sie auch unter www.heduschka.de finden.
+        </div>

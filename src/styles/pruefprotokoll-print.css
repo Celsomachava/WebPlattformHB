@@ -1,0 +1,21 @@
+/* Print stylesheet for Prüfprotokoll DGUV 201-004 */
+@media print {
+  .no-print { display: none !important; }
+  .form-view { display: none !important; }
+  
+  body {
+    margin: 0;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+  }
+  
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  
+  table {
+    page-break-inside: avoid;
+  }
+}

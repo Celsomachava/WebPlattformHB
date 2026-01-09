@@ -8,6 +8,10 @@ import InvoiceModule from './components/admin/InvoiceModule';
 import KundenAnlegen from './components/admin/KundenAnlegen';
 import ClientManagement from './components/admin/ClientManagement';
 import ServiceRequestsOverview from './components/admin/ServiceRequestsOverview';
+import WochenplanModule from './components/admin/WochenplanModule';
+import PruefprotokollForm from './components/admin/PruefprotokollForm';
+import ArbeitsauftragModule from './components/admin/ArbeitsauftragModule';
+import GefaehrdungsbeurteilungModule from './components/admin/GefaehrdungsbeurteilungModule';
 
 // Working Admin Dashboard without problematic imports
 const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
@@ -118,6 +122,26 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
       {activeTab === 'kundenverwaltung' && (
         <ClientManagement user={user} />
       )}
+      
+      {/* Wochenplan Tab */}
+      {activeTab === 'wochenplan' && (
+        <WochenplanModule serviceAnfrageId="demo-request-001" />
+      )}
+      
+      {/* Prüfprotokoll Tab */}
+      {activeTab === 'pruefprotokoll' && (
+        <PruefprotokollForm serviceAnfrageId="demo-request-001" />
+      )}
+      
+      {/* Arbeitsauftrag Tab */}
+      {activeTab === 'arbeitsauftrag' && (
+        <ArbeitsauftragModule serviceAnfrageId="demo-request-001" />
+      )}
+      
+      {/* Gefährdungsbeurteilung Tab */}
+      {activeTab === 'gefaehrdungsbeurteilung' && (
+        <GefaehrdungsbeurteilungModule serviceAnfrageId="demo-request-001" />
+      )}
     </div>
   );
 };
@@ -196,7 +220,11 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
     { key: 'rechnungen', label: 'Rechnungen' },
     { key: 'anfragen', label: 'Anfrage Übersicht' },
     { key: 'kunden-anlegen', label: 'Kunden Anlegen' },
-    { key: 'kundenverwaltung', label: 'Kundenverwaltung' }
+    { key: 'kundenverwaltung', label: 'Kundenverwaltung' },
+    { key: 'wochenplan', label: 'Wochenplan' },
+    { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV' },
+    { key: 'arbeitsauftrag', label: 'Arbeitsauftrag' },
+    { key: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilung' }
   ];
   
   const customerMenuItems = [
