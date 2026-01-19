@@ -5,6 +5,9 @@ const ServiceRequestForm = ({ user }) => {
   const [formData, setFormData] = useState({
     kunden_id: '',
     anlagen_id: '',
+    standort: '',
+    filtertyp: '',
+    qr_code: '',
     serviceart: '',
     dringlichkeit: 'normal',
     wunschtermin: '',
@@ -15,6 +18,9 @@ const ServiceRequestForm = ({ user }) => {
   const [customerData, setCustomerData] = useState({});
   const [clients, setClients] = useState([]);
   const [installations, setInstallations] = useState([]);
+  const [filteredInstallations, setFilteredInstallations] = useState([]);
+  const [selectedAnlage, setSelectedAnlage] = useState(null);
+  const [qrError, setQrError] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isDraft, setIsDraft] = useState(false);
@@ -65,6 +71,7 @@ const ServiceRequestForm = ({ user }) => {
   const loadCustomerData = async (kundenId) => {
     if (!kundenId) {
       setCustomerData({});
+      setFilteredInstallations([]);
       return;
     }
     
@@ -73,11 +80,19 @@ const ServiceRequestForm = ({ user }) => {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
-        setCustomerData(await response.json());
+        const data = await response.json();
+        setCustomerData(data);
+        
+        const filtered = installations.filter(inst => inst.kunden_id === kundenId);
+        setFilteredInstallations(filtered);
       }
     } catch (error) {
       const client = clients.find(c => c.kundennummer === kundenId);
-      if (client) setCustomerData(client);
+      if (client) {
+        setCustomerData(client);
+        const filtered = installations.filter(inst => inst.kunden_id === kundenId);
+        setFilteredInstallations(filtered);
+      }
     }
   };
 
@@ -94,6 +109,74 @@ const ServiceRequestForm = ({ user }) => {
     } catch (error) {
       const cached = localStorage.getItem('customer_installations');
       if (cached) setInstallations(JSON.parse(cached));
+    }
+  };
+
+  const handleAnlageSelect = (anlageId) => {
+    const anlage = filteredInstallations.find(a => a.id === anlageId);
+    if (anlage) {
+      setSelectedAnlage(anlage);
+      setFormData(prev => ({
+        ...prev,
+        anlagen_id: anlage.id,
+        standort: anlage.standort || '',
+        filtertyp: anlage.filtertyp || ''
+      }));
+    } else {
+      setSelectedAnlage(null);
+      setFormData(prev => ({
+        ...prev,
+        anlagen_id: '',
+        standort: '',
+        filtertyp: ''
+      }));
+    }
+  };
+
+  const handleQRCodeScan = async () => {
+    const qrCode = formData.qr_code.trim();
+    if (!qrCode) return;
+    
+    setQrError('');
+    
+    try {
+      const response = await fetch(`/api/anlagen/qr/${qrCode}`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      
+      if (response.ok) {
+        const anlage = await response.json();
+        
+        if (anlage.kunden_id !== formData.kunden_id) {
+          setQrError('QR-Code gehört nicht zu diesem Kunden');
+          return;
+        }
+        
+        setSelectedAnlage(anlage);
+        setFormData(prev => ({
+          ...prev,
+          anlagen_id: anlage.id,
+          standort: anlage.standort || '',
+          filtertyp: anlage.filtertyp || ''
+        }));
+        alert('Anlage erfolgreich über QR-Code geladen!');
+      } else {
+        setQrError('QR-Code ungültig oder nicht gefunden');
+      }
+    } catch (error) {
+      const anlage = installations.find(a => a.qr_code_id === qrCode);
+      if (anlage && anlage.kunden_id === formData.kunden_id) {
+        setSelectedAnlage(anlage);
+        setFormData(prev => ({
+          ...prev,
+          anlagen_id: anlage.id,
+          standort: anlage.standort || '',
+          filtertyp: anlage.filtertyp || ''
+        }));
+        alert('Anlage erfolgreich über QR-Code geladen!');
+      } else {
+        setQrError('QR-Code ungültig oder nicht diesem Kunden zugeordnet');
+      }
     }
   };
 
@@ -147,7 +230,21 @@ const ServiceRequestForm = ({ user }) => {
   };
 
   const validateForm = () => {
-    return formData.kunden_id !== '' && formData.serviceart !== '' && formData.dringlichkeit !== '' && formData.datenschutz;
+    if (!formData.kunden_id || !formData.serviceart || !formData.dringlichkeit || !formData.datenschutz) {
+      return false;
+    }
+    
+    if (formData.wunschtermin) {
+      const selectedDate = new Date(formData.wunschtermin);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        alert('Wunschtermin darf nicht in der Vergangenheit liegen');
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -161,12 +258,13 @@ const ServiceRequestForm = ({ user }) => {
     try {
       const payload = {
         kunden_id: formData.kunden_id,
-        anlagen_id: formData.anlagen_id,
+        anlagen_id: formData.anlagen_id || null,
         serviceart: formData.serviceart,
         dringlichkeit: formData.dringlichkeit,
         wunschtermin: formData.wunschtermin || null,
         zeitfenster: formData.zeitfenster || null,
-        bemerkungen: formData.bemerkungen
+        bemerkungen: formData.bemerkungen,
+        status: 'neu'
       };
 
       if (isOffline) {
@@ -197,15 +295,15 @@ const ServiceRequestForm = ({ user }) => {
           const result = await response.json();
           
           if (attachments.length > 0) {
-            const formData = new FormData();
+            const formDataUpload = new FormData();
             attachments.forEach(att => {
-              formData.append('files', att.file);
+              formDataUpload.append('files', att.file);
             });
             
             await fetch(`/api/serviceanfrage/${result.id}/attachments`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` },
-              body: formData
+              body: formDataUpload
             });
           }
           
@@ -219,6 +317,9 @@ const ServiceRequestForm = ({ user }) => {
       setFormData({
         kunden_id: user?.customer_id || '',
         anlagen_id: '',
+        standort: '',
+        filtertyp: '',
+        qr_code: '',
         serviceart: '',
         dringlichkeit: 'normal',
         wunschtermin: '',
@@ -227,6 +328,7 @@ const ServiceRequestForm = ({ user }) => {
         datenschutz: false
       });
       setAttachments([]);
+      setSelectedAnlage(null);
       
     } catch (error) {
       alert('Fehler beim Übertragen der Serviceanfrage');
@@ -235,99 +337,9 @@ const ServiceRequestForm = ({ user }) => {
     }
   };
 
-  const exportToPDF = () => {
-    const printContent = `
-      <html>
-        <head>
-          <title>Serviceanfrage - ${formData.kunden_id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .section { margin-bottom: 20px; }
-            .field { margin-bottom: 10px; }
-            .label { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Heduschka GmbH - Serviceanfrage</h1>
-            <p>Datum: ${new Date().toLocaleDateString('de-DE')}</p>
-          </div>
-          
-          <div class="section">
-            <h2>Kundendaten</h2>
-            <div class="field"><span class="label">Kunden-ID:</span> ${formData.kunden_id}</div>
-            <div class="field"><span class="label">Firmenname:</span> ${customerData.firmenname || ''}</div>
-            <div class="field"><span class="label">Ansprechpartner:</span> ${customerData.ansprechpartner || ''}</div>
-            <div class="field"><span class="label">E-Mail:</span> ${customerData.email || ''}</div>
-            <div class="field"><span class="label">Telefon:</span> ${customerData.telefon || ''}</div>
-          </div>
-          
-          <div class="section">
-            <h2>Anlagendaten</h2>
-            <div class="field"><span class="label">Anlagen-ID:</span> ${formData.anlagen_id || 'Nicht ausgewählt'}</div>
-          </div>
-          
-          <div class="section">
-            <h2>Service-Details</h2>
-            <div class="field"><span class="label">Serviceart:</span> ${formData.serviceart}</div>
-            <div class="field"><span class="label">Dringlichkeit:</span> ${formData.dringlichkeit}</div>
-            <div class="field"><span class="label">Wunschtermin:</span> ${formData.wunschtermin || 'Nicht angegeben'}</div>
-            <div class="field"><span class="label">Zeitfenster:</span> ${formData.zeitfenster || 'Keine Präferenz'}</div>
-          </div>
-          
-          <div class="section">
-            <h2>Zusatzinformationen</h2>
-            <div class="field"><span class="label">Bemerkungen:</span><br>${formData.bemerkungen || 'Keine Bemerkungen'}</div>
-            <div class="field"><span class="label">Anhänge:</span> ${attachments.length} Datei(en)</div>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const exportToCSV = () => {
-    const csvData = [
-      ['Feld', 'Wert'],
-      ['Kunden-ID', formData.kunden_id],
-      ['Firmenname', customerData.firmenname || ''],
-      ['Ansprechpartner', customerData.ansprechpartner || ''],
-      ['E-Mail', customerData.email || ''],
-      ['Telefon', customerData.telefon || ''],
-      ['Anlagen-ID', formData.anlagen_id || 'Nicht ausgewählt'],
-      ['Serviceart', formData.serviceart],
-      ['Dringlichkeit', formData.dringlichkeit],
-      ['Wunschtermin', formData.wunschtermin || 'Nicht angegeben'],
-      ['Zeitfenster', formData.zeitfenster || 'Keine Präferenz'],
-      ['Bemerkungen', formData.bemerkungen || 'Keine Bemerkungen'],
-      ['Anhänge', `${attachments.length} Datei(en)`],
-      ['Datum', new Date().toLocaleDateString('de-DE')]
-    ];
-
-    const csvContent = csvData.map(row => 
-      row.map(field => `"${field}"`).join(';')
-    ).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Serviceanfrage_${formData.kunden_id}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ marginBottom: '30px' }}>
           <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Serviceanfrage</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -354,7 +366,6 @@ const ServiceRequestForm = ({ user }) => {
           </div>
         </div>
 
-        {/* Single Form */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '8px',
@@ -387,23 +398,27 @@ const ServiceRequestForm = ({ user }) => {
             
             {formData.kunden_id && (
               <>
-                <small style={{ color: '#6c757d', fontSize: '12px', display: 'block', marginBottom: '15px' }}>Diese Daten können nur vom Administrator geändert werden</small>
+                <small style={{ color: '#6c757d', fontSize: '12px', display: 'block', marginBottom: '15px' }}>Diese Daten sind schreibgeschützt und können nur vom Administrator geändert werden</small>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                   <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kundennummer</label>
+                    <input type="text" value={formData.kunden_id} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                  </div>
+                  <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Firmenname</label>
-                    <input type="text" value={customerData.firmenname || ''} readOnly style={{ backgroundColor: '#f8f9fa', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+                    <input type="text" value={customerData.firmenname || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Ansprechpartner</label>
-                    <input type="text" value={customerData.ansprechpartner || ''} readOnly style={{ backgroundColor: '#f8f9fa', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+                    <input type="text" value={customerData.ansprechpartner || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>E-Mail</label>
-                    <input type="email" value={customerData.email || ''} readOnly style={{ backgroundColor: '#f8f9fa', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+                    <input type="email" value={customerData.email || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Telefon</label>
-                    <input type="tel" value={customerData.telefon || ''} readOnly style={{ backgroundColor: '#f8f9fa', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+                    <input type="tel" value={customerData.telefon || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
                   </div>
                 </div>
               </>
@@ -413,21 +428,73 @@ const ServiceRequestForm = ({ user }) => {
           {/* Anlagendaten */}
           <div style={{ marginBottom: '40px' }}>
             <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>2. Anlagendaten</h3>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Anlage auswählen</label>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>QR-Code scannen (optional)</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text"
+                  value={formData.qr_code}
+                  onChange={(e) => setFormData(prev => ({ ...prev, qr_code: e.target.value }))}
+                  placeholder="QR-Code eingeben oder scannen"
+                  style={{ flex: 1, padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleQRCodeScan}
+                  disabled={!formData.kunden_id || !formData.qr_code}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: formData.kunden_id && formData.qr_code ? '#17a2b8' : '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: formData.kunden_id && formData.qr_code ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Scannen
+                </button>
+              </div>
+              {qrError && (
+                <div style={{ marginTop: '5px', color: '#dc3545', fontSize: '14px' }}>
+                  {qrError}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Anlage auswählen (optional)</label>
               <select 
                 value={formData.anlagen_id} 
-                onChange={(e) => handleInputChange('anlagen_id', e.target.value)}
+                onChange={(e) => handleAnlageSelect(e.target.value)}
+                disabled={!formData.kunden_id}
                 style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
               >
-                <option value="">Bitte wählen (optional)...</option>
-                {installations.map(inst => (
+                <option value="">Bitte wählen...</option>
+                {filteredInstallations.map(inst => (
                   <option key={inst.id} value={inst.id}>
-                    {inst.standort} - {inst.filtertyp}
+                    {inst.anlagen_id || inst.id} - {inst.standort}
                   </option>
                 ))}
               </select>
             </div>
+            
+            {selectedAnlage && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Anlagen-ID</label>
+                  <input type="text" value={selectedAnlage.anlagen_id || selectedAnlage.id} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Standort</label>
+                  <input type="text" value={formData.standort} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Aktueller Filtertyp</label>
+                  <input type="text" value={formData.filtertyp} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Service-Details */}
@@ -568,37 +635,7 @@ const ServiceRequestForm = ({ user }) => {
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={exportToPDF}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #17a2b8',
-                  backgroundColor: 'transparent',
-                  color: '#17a2b8',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                📄 Als PDF drucken
-              </button>
-              
-              <button
-                onClick={exportToCSV}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #28a745',
-                  backgroundColor: 'transparent',
-                  color: '#28a745',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                📊 Als CSV exportieren
-              </button>
-            </div>
-            
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button
               onClick={handleSubmit}
               disabled={!validateForm() || isSubmitting}

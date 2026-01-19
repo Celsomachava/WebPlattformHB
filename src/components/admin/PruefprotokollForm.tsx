@@ -97,11 +97,22 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
   if (!data) return <div style={{ padding: '20px' }}>Fehler</div>;
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>💾 Speichern</button>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🖨️ Drucken</button>
+        <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Speichern</button>
+        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Drucken</button>
       </div>
+
+      <style>{`
+        @media print {
+          * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+          body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
+          .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3, p, header, footer { display: none !important; }
+          .print-view { display: block !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; }
+          @page { size: A4 portrait; margin: 0; }
+        }
+        .print-view { display: none; }
+      `}</style>
 
       {errors.length > 0 && <div className="no-print" style={{ padding: '10px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px' }}>{errors.map((e, i) => <div key={i}>{e}</div>)}</div>}
 

@@ -122,22 +122,22 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId }) =>
   const isReadOnly = data.final_submission;
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <style>{`
         @media print {
-          .no-print { display: none !important; }
-          .form-view { display: none !important; }
-          .print-view { display: block !important; }
-          body { margin: 0; padding: 10px; font-family: Arial, sans-serif; font-size: 10px; }
-          @page { size: A4; margin: 10mm; }
+          * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+          body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
+          .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3, p, header, footer { display: none !important; }
+          .print-view { display: block !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; }
+          @page { size: A4 portrait; margin: 0; }
         }
         .print-view { display: none; }
       `}</style>
 
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <button onClick={save} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>💾 Speichern</button>
-        <button onClick={finalSubmit} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>🔒 Final Abgeben</button>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🖨️ Drucken</button>
+        <button onClick={save} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>Speichern</button>
+        <button onClick={finalSubmit} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>Final Abgeben</button>
+        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Drucken</button>
         {isReadOnly && <span style={{ color: '#dc3545', fontWeight: 'bold' }}>🔒 SCHREIBGESCHÜTZT</span>}
       </div>
 

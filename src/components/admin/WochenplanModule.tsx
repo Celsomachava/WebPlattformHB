@@ -143,12 +143,15 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
   const weeklyTotal = calculateWeeklyTotal(plan.rows);
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }} className="wochenplan-container">
+    <div style={{ maxWidth: 'calc(100vw - 270px)' }} className="wochenplan-container">
       <style>{`
         @media print {
-          .no-print { display: none !important; }
-          .wochenplan-container { margin: 0; padding: 10px; }
-          table { font-size: 10px; }
+          * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+          body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
+          .no-print, nav, button, .sidebar, .topbar, h1, h2, h3, p, header, footer, .wochenplan-container > div:first-child { display: none !important; }
+          .wochenplan-container { margin: 0 !important; padding: 15mm !important; max-width: 100% !important; width: 100% !important; }
+          table { page-break-inside: avoid; }
+          @page { size: A4 landscape; margin: 0; }
         }
       `}</style>
 
@@ -156,10 +159,10 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
         <h1>Wochenplan</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={handleSave} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            💾 Speichern
+            Speichern
           </button>
           <button onClick={handlePrint} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            🖨️ Drucken
+            Drucken
           </button>
         </div>
       </div>

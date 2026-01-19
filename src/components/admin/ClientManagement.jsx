@@ -22,12 +22,17 @@ const ClientManagement = ({ user }) => {
       }
     } catch (error) {
       const cached = localStorage.getItem('admin_clients');
-      if (cached) setClients(JSON.parse(cached));
-      
       const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
-      if (pending.length > 0) {
-        setClients(prev => [...prev, ...pending]);
-      }
+      
+      const allClients = [];
+      if (cached) allClients.push(...JSON.parse(cached));
+      if (pending.length > 0) allClients.push(...pending);
+      
+      const uniqueClients = allClients.filter((client, index, self) =>
+        index === self.findIndex(c => c.kundennummer === client.kundennummer)
+      );
+      
+      setClients(uniqueClients);
     } finally {
       setLoading(false);
     }
@@ -48,7 +53,7 @@ const ClientManagement = ({ user }) => {
   }
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenverwaltung</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Übersicht aller registrierten Kunden</p>

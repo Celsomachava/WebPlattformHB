@@ -81,7 +81,7 @@ const ServiceRequestsOverview = ({ user }) => {
 
   if (loading) {
     return (
-      <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+      <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
         <p>Lade Serviceanfragen...</p>
       </div>
     );
@@ -89,7 +89,7 @@ const ServiceRequestsOverview = ({ user }) => {
 
   if (selectedRequest) {
     return (
-      <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+      <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
         <button
           onClick={() => setSelectedRequest(null)}
           style={{
@@ -173,7 +173,7 @@ const ServiceRequestsOverview = ({ user }) => {
   }
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Serviceanfragen Übersicht</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Alle Serviceanfragen von Kunden</p>

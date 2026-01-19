@@ -11,6 +11,7 @@ import ServiceRequestsOverview from './components/admin/ServiceRequestsOverview'
 import WochenplanModule from './components/admin/WochenplanModule';
 import PruefprotokollForm from './components/admin/PruefprotokollForm';
 import ArbeitsauftragModule from './components/admin/ArbeitsauftragModule';
+import AnlageAnlegen from './components/admin/AnlageAnlegen';
 import GefaehrdungsbeurteilungModule from './components/admin/GefaehrdungsbeurteilungModule';
 
 // Working Admin Dashboard without problematic imports
@@ -44,7 +45,7 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
   );
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px', maxWidth: 'calc(100vw - 270px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Admin Dashboard</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, Administrator</p>
@@ -123,6 +124,11 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
         <ClientManagement user={user} />
       )}
       
+      {/* Anlage anlegen Tab */}
+      {activeTab === 'anlage-anlegen' && (
+        <AnlageAnlegen user={user} />
+      )}
+      
       {/* Wochenplan Tab */}
       {activeTab === 'wochenplan' && (
         <WochenplanModule serviceAnfrageId="demo-request-001" />
@@ -150,7 +156,7 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
 const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px', maxWidth: 'calc(100vw - 270px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenportal</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id}</p>
@@ -160,24 +166,29 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
       <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
         <h3>{activeTab === 'overview' ? 'Übersicht' : 
              activeTab === 'service-requests' ? 'Serviceanfragen' :
+             activeTab === 'anlage-anlegen' ? 'Anlage anlegen' :
              activeTab === 'angebote' ? 'Angebote' : 'Rechnungen'}</h3>
         {activeTab === 'service-requests' && (
           <div>
             <p>Erstellen Sie eine neue Serviceanfrage:</p>
-            <a href="/customer/portal/service-request" style={{
+            <button onClick={() => window.location.href = '/customer/portal/service-request'} style={{
               display: 'inline-block',
               padding: '12px 24px',
               backgroundColor: '#28a745',
               color: 'white',
-              textDecoration: 'none',
+              border: 'none',
               borderRadius: '4px',
-              marginTop: '10px'
+              marginTop: '10px',
+              cursor: 'pointer'
             }}>
               + Neue Serviceanfrage
-            </a>
+            </button>
           </div>
         )}
-        {activeTab !== 'service-requests' && <p>Inhalte werden geladen...</p>}
+        {activeTab === 'anlage-anlegen' && (
+          <AnlageAnlegen user={user} />
+        )}
+        {activeTab !== 'service-requests' && activeTab !== 'anlage-anlegen' && <p>Inhalte werden geladen...</p>}
       </div>
     </div>
   );
@@ -221,6 +232,7 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
     { key: 'anfragen', label: 'Anfrage Übersicht' },
     { key: 'kunden-anlegen', label: 'Kunden Anlegen' },
     { key: 'kundenverwaltung', label: 'Kundenverwaltung' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen' },
     { key: 'wochenplan', label: 'Wochenplan' },
     { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV' },
     { key: 'arbeitsauftrag', label: 'Arbeitsauftrag' },
@@ -230,6 +242,7 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
   const customerMenuItems = [
     { key: 'overview', label: 'Übersicht' },
     { key: 'service-requests', label: 'Serviceanfragen' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen' },
     { key: 'angebote', label: 'Angebote' },
     { key: 'rechnungen', label: 'Rechnungen' }
   ];
@@ -248,8 +261,11 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
       padding: '20px 0'
     }}>
       <h3 style={{ padding: '0 20px', margin: '0 0 20px 0' }}>
-        {isAdmin ? 'Admin Panel' : 'Kundenportal'}
+        {isAdmin ? 'Heduschka' : 'Heduschka'}
       </h3>
+      <p style={{ padding: '0 20px', margin: '0 0 20px 0', fontSize: '14px', color: '#bdc3c7' }}>
+        {isAdmin ? 'Adminportal' : 'Willkommen bei Kundenportal'}
+      </p>
       
       <nav>
         {menuItems.map(item => (
@@ -306,35 +322,66 @@ const LoginComponent = ({ onLogin }) => {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: '100vh',
-      background: '#f8f9fa'
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     }}>
       <div style={{
-        background: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        background: 'rgba(255, 255, 255, 0.95)',
+        padding: '50px 40px',
+        borderRadius: '20px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         width: '100%',
-        maxWidth: '400px'
+        maxWidth: '400px',
+        textAlign: 'center'
       }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Heduschka Service</h1>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          margin: '0 auto 30px',
+          background: '#667eea',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        
+        <h1 style={{ margin: '0 0 30px 0', fontSize: '28px', color: '#333' }}>Heduschka Service</h1>
         
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-              Zugangs-Token *
-            </label>
+          <div style={{ marginBottom: '20px', position: 'relative' }}>
+            <div style={{
+              position: 'absolute',
+              left: '15px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#667eea'
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
             <input
               type="text"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              placeholder="KUNDE_001 oder ADMIN_001"
+              placeholder="Zugangs-Token"
               style={{
                 width: '100%',
-                padding: '12px',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '16px'
+                padding: '15px 15px 15px 50px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '10px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border 0.3s',
+                boxSizing: 'border-box'
               }}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
               required
               disabled={isLoading}
             />
@@ -345,9 +392,9 @@ const LoginComponent = ({ onLogin }) => {
               color: '#dc3545',
               marginBottom: '20px',
               fontSize: '14px',
-              padding: '8px',
+              padding: '10px',
               background: '#f8d7da',
-              borderRadius: '4px'
+              borderRadius: '8px'
             }}>
               {error}
             </div>
@@ -358,26 +405,32 @@ const LoginComponent = ({ onLogin }) => {
             disabled={isLoading}
             style={{
               width: '100%',
-              padding: '12px',
-              background: isLoading ? '#6c757d' : '#007bff',
+              padding: '15px',
+              background: isLoading ? '#9ca3af' : '#667eea',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '10px',
               fontSize: '16px',
-              cursor: isLoading ? 'not-allowed' : 'pointer'
+              fontWeight: '600',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.3s',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
             }}
+            onMouseEnter={(e) => !isLoading && (e.target.style.background = '#5568d3')}
+            onMouseLeave={(e) => !isLoading && (e.target.style.background = '#667eea')}
           >
-            {isLoading ? 'Anmeldung läuft...' : 'Sicher anmelden'}
+            {isLoading ? 'Anmeldung läuft...' : 'LOGIN'}
           </button>
         </form>
 
         <div style={{
           marginTop: '30px',
           padding: '15px',
-          background: '#e7f3ff',
-          borderRadius: '4px',
+          background: '#f0f4ff',
+          borderRadius: '10px',
           fontSize: '12px',
-          color: '#0c5460'
+          color: '#667eea',
+          textAlign: 'left'
         }}>
           <strong>Demo-Tokens:</strong><br />
           Kunde: KUNDE_001<br />
