@@ -108,7 +108,14 @@ const ServiceRequestForm = ({ user }) => {
       }
     } catch (error) {
       const cached = localStorage.getItem('customer_installations');
-      if (cached) setInstallations(JSON.parse(cached));
+      if (cached) {
+        setInstallations(JSON.parse(cached));
+      }
+      
+      const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
+      if (pending.length > 0) {
+        setInstallations(prev => [...prev, ...pending]);
+      }
     }
   };
 
@@ -256,7 +263,9 @@ const ServiceRequestForm = ({ user }) => {
     setIsSubmitting(true);
     
     try {
-      const payload = {
+      const requestData = {
+        id: crypto.randomUUID(),
+        nummer: `SR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`,
         kunden_id: formData.kunden_id,
         anlagen_id: formData.anlagen_id || null,
         serviceart: formData.serviceart,
@@ -264,58 +273,37 @@ const ServiceRequestForm = ({ user }) => {
         wunschtermin: formData.wunschtermin || null,
         zeitfenster: formData.zeitfenster || null,
         bemerkungen: formData.bemerkungen,
-        status: 'neu'
+        status: 'neu',
+        created_at: Date.now(),
+        synced: false
       };
 
-      if (isOffline) {
-        const offlineRequest = {
-          id: crypto.randomUUID(),
-          ...payload,
-          attachments,
-          created_at: Date.now(),
-          synced: false
-        };
-        
-        const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
-        pending.push(offlineRequest);
-        localStorage.setItem('pending_service_requests', JSON.stringify(pending));
-        
-        alert('Serviceanfrage wurde offline gespeichert und wird bei Internetverbindung übertragen.');
-      } else {
-        const response = await fetch('/api/serviceanfrage', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await authService.getValidToken()}`
-          },
-          body: JSON.stringify(payload)
-        });
+      // Save to localStorage first (offline-first)
+      const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
+      pending.push(requestData);
+      localStorage.setItem('pending_service_requests', JSON.stringify(pending));
 
-        if (response.ok) {
-          const result = await response.json();
-          
-          if (attachments.length > 0) {
-            const formDataUpload = new FormData();
-            attachments.forEach(att => {
-              formDataUpload.append('files', att.file);
-            });
-            
-            await fetch(`/api/serviceanfrage/${result.id}/attachments`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` },
-              body: formDataUpload
-            });
-          }
-          
-          alert('Serviceanfrage wurde erfolgreich übermittelt!');
-        } else {
-          throw new Error('Übertragung fehlgeschlagen');
+      // Try server update
+      if (!isOffline) {
+        try {
+          await fetch('/api/serviceanfrage', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await authService.getValidToken()}`
+            },
+            body: JSON.stringify(requestData)
+          });
+        } catch (e) {
+          console.log('Server update failed, saved offline');
         }
       }
       
+      alert('Serviceanfrage wurde erfolgreich übermittelt!');
+      
       localStorage.removeItem('service_request_draft');
       setFormData({
-        kunden_id: user?.customer_id || '',
+        kunden_id: '',
         anlagen_id: '',
         standort: '',
         filtertyp: '',
@@ -329,9 +317,11 @@ const ServiceRequestForm = ({ user }) => {
       });
       setAttachments([]);
       setSelectedAnlage(null);
+      setIsDraft(false);
       
     } catch (error) {
-      alert('Fehler beim Übertragen der Serviceanfrage');
+      console.error('Submit error:', error);
+      alert('Serviceanfrage wurde offline gespeichert.');
     } finally {
       setIsSubmitting(false);
     }
@@ -350,7 +340,7 @@ const ServiceRequestForm = ({ user }) => {
               backgroundColor: isOffline ? '#dc3545' : '#28a745',
               color: 'white'
             }}>
-              {isOffline ? '🔴 Offline' : '🟢 Online'}
+              {isOffline ? 'Offline' : 'Online'}
             </span>
             {isDraft && (
               <span style={{ 
@@ -360,7 +350,7 @@ const ServiceRequestForm = ({ user }) => {
                 backgroundColor: '#ffc107',
                 color: '#000'
               }}>
-                💾 Entwurf gespeichert
+                Entwurf gespeichert
               </span>
             )}
           </div>

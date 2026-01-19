@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import { invoiceHistoryService } from '../../services/offerHistoryService';
 
 const InvoiceModule = ({ user }) => {
   const [activeView, setActiveView] = useState('list');
@@ -64,7 +65,13 @@ const InvoiceModule = ({ user }) => {
         setOffers(data.filter(offer => !invoices.some(inv => inv.angebot_id === offer.id)));
       }
     } catch (error) {
-      console.error('Error loading accepted offers:', error);
+      // Load from localStorage (offline-first)
+      const cached = localStorage.getItem('admin_offers');
+      if (cached) {
+        const allOffers = JSON.parse(cached);
+        const acceptedOffers = allOffers.filter(o => o.status === 'angenommen' && !invoices.some(inv => inv.angebot_id === o.id));
+        setOffers(acceptedOffers);
+      }
     }
   };
 
@@ -103,10 +110,16 @@ const InvoiceModule = ({ user }) => {
         setClientOffers(data.filter(offer => !invoices.some(inv => inv.angebot_id === offer.id)));
       }
     } catch (error) {
-      const cached = localStorage.getItem('pending_offers');
+      // Load from localStorage (offline-first)
+      const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
-        setClientOffers(allOffers.filter(o => o.kunden_id === kundenId && o.status === 'angenommen'));
+        const clientAcceptedOffers = allOffers.filter(o => 
+          o.kunden_id === kundenId && 
+          o.status === 'angenommen' && 
+          !invoices.some(inv => inv.angebot_id === o.id)
+        );
+        setClientOffers(clientAcceptedOffers);
       }
     }
   };
@@ -163,6 +176,12 @@ const InvoiceModule = ({ user }) => {
 
       if (response.ok) {
         const result = await response.json();
+        
+        // Create version history
+        await invoiceHistoryService.createVersion(result.id, {
+          action: 'created',
+          data: invoiceData
+        }, user?.id);
         
         // Generate PDF after saving
         try {
@@ -221,6 +240,13 @@ const InvoiceModule = ({ user }) => {
       });
 
       if (response.ok) {
+        await invoiceHistoryService.createVersion(invoiceId, {
+          action: 'status_changed',
+          old_status: invoices.find(i => i.id === invoiceId)?.status,
+          new_status: newStatus,
+          timestamp: Date.now()
+        }, user?.id);
+        
         loadInvoices();
         alert(`Rechnungsstatus wurde auf "${newStatus}" geändert.`);
       }

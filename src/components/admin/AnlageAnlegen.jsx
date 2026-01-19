@@ -13,6 +13,7 @@ const AnlageAnlegen = ({ user }) => {
   const [anlagen, setAnlagen] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [editingAnlage, setEditingAnlage] = useState(null);
   const isCustomer = user?.role === 'KUNDE_XXX';
 
   useEffect(() => {
@@ -131,8 +132,8 @@ const AnlageAnlegen = ({ user }) => {
       if (response.ok) {
         setMessage('Anlage wurde erfolgreich angelegt!');
         
-        const cachedAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
         const newAnlage = await response.json();
+        const cachedAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
         cachedAnlagen.push(newAnlage);
         localStorage.setItem('customer_installations', JSON.stringify(cachedAnlagen));
         
@@ -186,6 +187,7 @@ const AnlageAnlegen = ({ user }) => {
   };
 
   const handleReset = () => {
+    setEditingAnlage(null);
     setAnlageForm({
       anlagen_id: '',
       kunden_id: isCustomer ? (user?.customer_id || user?.kunden_id) : '',
@@ -195,6 +197,45 @@ const AnlageAnlegen = ({ user }) => {
     });
     setMessage('');
     generateAnlagenId();
+  };
+
+  const editAnlage = (anlage) => {
+    setEditingAnlage(anlage);
+    setAnlageForm({ ...anlage });
+  };
+
+  const updateAnlage = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    const updatedAnlagen = anlagen.map(a => 
+      a.id === editingAnlage.id ? { ...editingAnlage, ...anlageForm, updated_at: Date.now() } : a
+    );
+    setAnlagen(updatedAnlagen);
+    
+    const allAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
+    const updatedAll = allAnlagen.map(a => 
+      a.id === editingAnlage.id ? { ...editingAnlage, ...anlageForm, updated_at: Date.now() } : a
+    );
+    localStorage.setItem('customer_installations', JSON.stringify(updatedAll));
+    
+    setMessage('Anlage wurde erfolgreich aktualisiert!');
+    setIsSubmitting(false);
+    handleReset();
+  };
+
+  const deleteAnlage = async (anlageId) => {
+    if (!window.confirm('Möchten Sie diese Anlage wirklich löschen?')) return;
+
+    const updatedAnlagen = anlagen.filter(a => a.id !== anlageId);
+    setAnlagen(updatedAnlagen);
+    
+    const allAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
+    const updatedAll = allAnlagen.filter(a => a.id !== anlageId);
+    localStorage.setItem('customer_installations', JSON.stringify(updatedAll));
+    
+    alert('Anlage wurde gelöscht!');
   };
 
   return (
@@ -213,7 +254,7 @@ const AnlageAnlegen = ({ user }) => {
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
           marginBottom: '20px'
         }}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={editingAnlage ? updateAnlage : handleSubmit}>
             <div style={{ display: 'grid', gap: '20px', marginBottom: '30px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
@@ -383,7 +424,7 @@ const AnlageAnlegen = ({ user }) => {
                   cursor: isSubmitting ? 'not-allowed' : 'pointer'
                 }}
               >
-                {isSubmitting ? 'Wird gespeichert...' : 'Anlage anlegen'}
+                {isSubmitting ? 'Wird gespeichert...' : editingAnlage ? 'Anlage aktualisieren' : 'Anlage anlegen'}
               </button>
             </div>
           </form>
@@ -424,23 +465,57 @@ const AnlageAnlegen = ({ user }) => {
                 padding: '20px',
                 borderBottom: '1px solid #dee2e6'
               }}>
-                <div style={{ marginBottom: '10px' }}>
-                  <strong style={{ color: '#007bff', fontSize: '16px' }}>{anlage.anlagen_id || anlage.id}</strong>
-                </div>
-                <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                  {!isCustomer && (
-                    <div>
-                      <span style={{ color: '#6c757d' }}>Kunde:</span> {anlage.kunden_id}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ marginBottom: '10px' }}>
+                      <strong style={{ color: '#007bff', fontSize: '16px' }}>{anlage.anlagen_id || anlage.id}</strong>
                     </div>
-                  )}
-                  <div>
-                    <span style={{ color: '#6c757d' }}>Standort:</span> {anlage.standort}
+                    <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
+                      {!isCustomer && (
+                        <div>
+                          <span style={{ color: '#6c757d' }}>Kunde:</span> {anlage.kunden_id}
+                        </div>
+                      )}
+                      <div>
+                        <span style={{ color: '#6c757d' }}>Standort:</span> {anlage.standort}
+                      </div>
+                      <div>
+                        <span style={{ color: '#6c757d' }}>Filtertyp:</span> {anlage.filtertyp}
+                      </div>
+                      <div>
+                        <span style={{ color: '#6c757d' }}>QR-Code:</span> {anlage.qr_code_id}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span style={{ color: '#6c757d' }}>Filtertyp:</span> {anlage.filtertyp}
-                  </div>
-                  <div>
-                    <span style={{ color: '#6c757d' }}>QR-Code:</span> {anlage.qr_code_id}
+                  <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
+                    <button
+                      onClick={() => editAnlage(anlage)}
+                      style={{
+                        padding: '6px 12px',
+                        border: '1px solid #ffc107',
+                        backgroundColor: 'transparent',
+                        color: '#ffc107',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Bearbeiten
+                    </button>
+                    <button
+                      onClick={() => deleteAnlage(anlage.id)}
+                      style={{
+                        padding: '6px 12px',
+                        border: 'none',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Löschen
+                    </button>
                   </div>
                 </div>
               </div>

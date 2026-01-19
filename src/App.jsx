@@ -13,6 +13,8 @@ import PruefprotokollForm from './components/admin/PruefprotokollForm';
 import ArbeitsauftragModule from './components/admin/ArbeitsauftragModule';
 import AnlageAnlegen from './components/admin/AnlageAnlegen';
 import GefaehrdungsbeurteilungModule from './components/admin/GefaehrdungsbeurteilungModule';
+import CustomerOfferView from './components/customer/CustomerOfferView';
+import CustomerInvoiceView from './components/customer/CustomerInvoiceView';
 
 // Working Admin Dashboard without problematic imports
 const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
@@ -171,7 +173,9 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
         {activeTab === 'service-requests' && (
           <div>
             <p>Erstellen Sie eine neue Serviceanfrage:</p>
-            <button onClick={() => window.location.href = '/customer/portal/service-request'} style={{
+            <button onClick={() => {
+              window.location.href = '/customer/portal/service-request';
+            }} style={{
               display: 'inline-block',
               padding: '12px 24px',
               backgroundColor: '#28a745',
@@ -188,7 +192,13 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
         {activeTab === 'anlage-anlegen' && (
           <AnlageAnlegen user={user} />
         )}
-        {activeTab !== 'service-requests' && activeTab !== 'anlage-anlegen' && <p>Inhalte werden geladen...</p>}
+        {activeTab === 'angebote' && (
+          <CustomerOfferView user={user} />
+        )}
+        {activeTab === 'rechnungen' && (
+          <CustomerInvoiceView user={user} />
+        )}
+        {activeTab !== 'service-requests' && activeTab !== 'anlage-anlegen' && activeTab !== 'angebote' && activeTab !== 'rechnungen' && <p>Inhalte werden geladen...</p>}
       </div>
     </div>
   );

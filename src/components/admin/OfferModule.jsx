@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import { offerHistoryService } from '../../services/offerHistoryService';
 
 const OfferModule = ({ user }) => {
   const [activeView, setActiveView] = useState('list');
@@ -55,20 +56,39 @@ const OfferModule = ({ user }) => {
   };
 
   const createInvoiceFromOffer = async (offerId) => {
-    try {
-      const response = await fetch(`/api/angebote/${offerId}/create-invoice`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-      });
-      
-      if (response.ok) {
-        const invoice = await response.json();
-        alert(`Rechnung ${invoice.nummer} wurde automatisch erstellt!`);
-        loadOffers();
-      }
-    } catch (error) {
-      alert('Fehler beim Erstellen der Rechnung');
+    if (!window.confirm('Möchten Sie eine Rechnung aus diesem Angebot erstellen?')) return;
+    
+    const offer = offers.find(o => o.id === offerId);
+    if (!offer) {
+      alert('Angebot nicht gefunden');
+      return;
     }
+
+    // Create invoice data and save to localStorage
+    const invoiceData = {
+      id: crypto.randomUUID(),
+      nummer: `RE-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`,
+      kunden_id: offer.kunden_id,
+      angebot_id: offer.id,
+      positionen: offer.positionen || [],
+      netto: offer.netto,
+      mwst_prozent: offer.mwst_prozent || 19,
+      mwst_betrag: offer.mwst_betrag,
+      brutto: offer.brutto,
+      status: 'offen',
+      zahlungsbedingungen: 'Zahlbar innerhalb 14 Tagen ohne Abzug',
+      faellig_am: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      bemerkungen: `Rechnung basierend auf Angebot ${offer.nummer}`,
+      created_at: Date.now(),
+      synced: false
+    };
+
+    const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]');
+    invoices.push(invoiceData);
+    localStorage.setItem('admin_invoices', JSON.stringify(invoices));
+
+    alert(`Rechnung ${invoiceData.nummer} wurde erstellt! Bitte wechseln Sie zum Rechnungsmodul.`);
+    loadOffers();
   };
 
   const loadServiceRequests = async () => {
@@ -194,11 +214,17 @@ const OfferModule = ({ user }) => {
   };
 
   const saveOffer = async () => {
+    if (!offerForm.kunden_id) {
+      alert('Bitte wählen Sie einen Kunden aus.');
+      return;
+    }
+
     try {
       const { netto, mwstBetrag, brutto } = calculateTotals();
       
       const offerData = {
         ...offerForm,
+        nummer: offerForm.nummer || generateOfferNumber(),
         netto,
         mwst_betrag: mwstBetrag,
         brutto,
@@ -219,7 +245,17 @@ const OfferModule = ({ user }) => {
       if (response.ok) {
         const result = await response.json();
         
-        // Generate PDF after saving
+        // Create version history (optional)
+        try {
+          await offerHistoryService.createVersion(result.id, {
+            action: 'created',
+            data: offerData
+          }, user?.id);
+        } catch (historyError) {
+          console.log('History tracking failed, continuing without history');
+        }
+        
+        // Generate PDF after saving (optional)
         try {
           const pdfResponse = await fetch(`/api/angebote/${result.id}/pdf`, {
             headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
@@ -237,17 +273,25 @@ const OfferModule = ({ user }) => {
           console.log('PDF generation failed, continuing without PDF');
         }
         
-        alert('Angebot wurde erfolgreich erstellt und als PDF gespeichert!');
+        alert('Angebot wurde erfolgreich erstellt!');
         loadOffers();
         setActiveView('list');
         resetForm();
+      } else {
+        throw new Error('Server error');
       }
     } catch (error) {
+      console.error('Save error:', error);
+      
       // Offline fallback
+      const { netto, mwstBetrag, brutto } = calculateTotals();
       const offlineOffer = {
         id: crypto.randomUUID(),
         ...offerForm,
-        ...calculateTotals(),
+        nummer: offerForm.nummer || generateOfferNumber(),
+        netto,
+        mwst_betrag: mwstBetrag,
+        brutto,
         status: 'entwurf',
         created_at: Date.now(),
         synced: false
@@ -257,48 +301,142 @@ const OfferModule = ({ user }) => {
       pending.push(offlineOffer);
       localStorage.setItem('pending_offers', JSON.stringify(pending));
       
+      const cachedOffers = JSON.parse(localStorage.getItem('admin_offers') || '[]');
+      cachedOffers.push(offlineOffer);
+      localStorage.setItem('admin_offers', JSON.stringify(cachedOffers));
+      
       alert('Angebot wurde offline gespeichert und wird bei Internetverbindung übertragen.');
+      loadOffers();
       setActiveView('list');
       resetForm();
     }
   };
 
   const sendOffer = async (offerId) => {
-    try {
-      const response = await fetch(`/api/angebote/${offerId}/send`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-      });
-      
-      if (response.ok) {
-        alert('Angebot wurde an den Kunden versendet!');
-        loadOffers();
-      }
-    } catch (error) {
-      alert('Fehler beim Versenden des Angebots');
+    if (!window.confirm('Möchten Sie dieses Angebot wirklich an den Kunden versenden?')) return;
+
+    const updatedOffers = offers.map(o => 
+      o.id === offerId ? { ...o, status: 'versendet', sent_at: Date.now() } : o
+    );
+    setOffers(updatedOffers);
+    localStorage.setItem('admin_offers', JSON.stringify(updatedOffers));
+    
+    alert('Angebot wurde als versendet markiert!');
+  };
+
+  const editOffer = (offer) => {
+    setOfferForm({ ...offer, positionen: offer.positionen || [] });
+    setCurrentOffer(offer);
+    setActiveView('edit');
+  };
+
+  const updateOffer = async () => {
+    if (!offerForm.kunden_id) {
+      alert('Bitte wählen Sie einen Kunden aus.');
+      return;
     }
+
+    const { netto, mwstBetrag, brutto } = calculateTotals();
+    const updatedOffer = {
+      ...currentOffer,
+      ...offerForm,
+      netto,
+      mwst_betrag: mwstBetrag,
+      brutto,
+      updated_at: Date.now()
+    };
+    
+    const updatedOffers = offers.map(o => o.id === currentOffer.id ? updatedOffer : o);
+    setOffers(updatedOffers);
+    localStorage.setItem('admin_offers', JSON.stringify(updatedOffers));
+    
+    alert('Angebot wurde aktualisiert!');
+    setActiveView('list');
+    setCurrentOffer(null);
+    resetForm();
+  };
+
+  const cancelOffer = async (offerId) => {
+    if (!window.confirm('Möchten Sie dieses Angebot wirklich stornieren?')) return;
+
+    const updatedOffers = offers.map(o => 
+      o.id === offerId ? { ...o, status: 'abgelehnt' } : o
+    );
+    setOffers(updatedOffers);
+    localStorage.setItem('admin_offers', JSON.stringify(updatedOffers));
+    
+    alert('Angebot wurde storniert.');
   };
 
   const generatePDF = async (offer) => {
-    try {
-      const response = await fetch(`/api/angebote/${offer.id}/pdf`, {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-      });
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Angebot_${offer.nummer}.pdf`;
-        a.click();
-      }
-    } catch (error) {
-      alert('PDF-Generierung nicht verfügbar (Offline)');
-    }
+    const printWindow = window.open('', '_blank');
+    const { netto, mwstBetrag, brutto } = {
+      netto: offer.netto || 0,
+      mwstBetrag: offer.mwst_betrag || 0,
+      brutto: offer.brutto || 0
+    };
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Angebot ${offer.nummer}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20mm; }
+          h1 { color: #007bff; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f8f9fa; }
+          .totals { text-align: right; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Heduschka GmbH</h1>
+        <h2>Angebot ${offer.nummer}</h2>
+        <p><strong>Kunde:</strong> ${offer.kunden_id}</p>
+        <p><strong>Datum:</strong> ${new Date(offer.created_at).toLocaleDateString('de-DE')}</p>
+        <p><strong>Gültig bis:</strong> ${offer.gueltig_bis}</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Typ</th>
+              <th>Beschreibung</th>
+              <th>Menge</th>
+              <th>Einzelpreis</th>
+              <th>Gesamt</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${offer.positionen?.map(pos => `
+              <tr>
+                <td>${pos.type}</td>
+                <td>${pos.beschreibung}</td>
+                <td>${pos.menge}</td>
+                <td>€${pos.einzelpreis?.toFixed(2)}</td>
+                <td>€${pos.gesamtpreis?.toFixed(2)}</td>
+              </tr>
+            `).join('') || ''}
+          </tbody>
+        </table>
+        
+        <div class="totals">
+          <p><strong>Netto:</strong> €${netto.toFixed(2)}</p>
+          <p><strong>MwSt. (${offer.mwst_prozent}%):</strong> €${mwstBetrag.toFixed(2)}</p>
+          <p><strong>Brutto:</strong> €${brutto.toFixed(2)}</p>
+        </div>
+        
+        ${offer.bemerkungen ? `<p><strong>Bemerkungen:</strong> ${offer.bemerkungen}</p>` : ''}
+        
+        <script>window.print();</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const resetForm = () => {
+    setCurrentOffer(null);
     setOfferForm({
       nummer: '',
       kunden_id: '',
@@ -334,14 +472,14 @@ const OfferModule = ({ user }) => {
     );
   };
 
-  if (activeView === 'create') {
+  if (activeView === 'create' || activeView === 'edit') {
     const { netto, mwstBetrag, brutto } = calculateTotals();
     
     return (
       <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-            <h1>Neues Angebot erstellen</h1>
+            <h1>{activeView === 'edit' ? 'Angebot bearbeiten' : 'Neues Angebot erstellen'}</h1>
             <button onClick={() => setActiveView('list')} style={{
               padding: '8px 16px',
               border: '1px solid #6c757d',
@@ -552,7 +690,7 @@ const OfferModule = ({ user }) => {
               </button>
               
               <button
-                onClick={saveOffer}
+                onClick={activeView === 'edit' ? updateOffer : saveOffer}
                 style={{
                   padding: '12px 24px',
                   border: 'none',
@@ -562,7 +700,7 @@ const OfferModule = ({ user }) => {
                   cursor: 'pointer'
                 }}
               >
-                Angebot speichern
+                {activeView === 'edit' ? 'Änderungen speichern' : 'Angebot speichern'}
               </button>
             </div>
           </div>
@@ -681,7 +819,7 @@ const OfferModule = ({ user }) => {
                   {getStatusBadge(offer.status)}
                 </td>
                 <td style={{ padding: '12px' }}>
-                  <div style={{ display: 'flex', gap: '5px' }}>
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => generatePDF(offer)}
                       style={{
@@ -697,20 +835,50 @@ const OfferModule = ({ user }) => {
                       PDF
                     </button>
                     {offer.status === 'entwurf' && (
-                      <button
-                        onClick={() => sendOffer(offer.id)}
-                        style={{
-                          padding: '4px 8px',
-                          border: 'none',
-                          backgroundColor: '#28a745',
-                          color: 'white',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        Versenden
-                      </button>
+                      <>
+                        <button
+                          onClick={() => editOffer(offer)}
+                          style={{
+                            padding: '4px 8px',
+                            border: '1px solid #ffc107',
+                            backgroundColor: 'transparent',
+                            color: '#ffc107',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Bearbeiten
+                        </button>
+                        <button
+                          onClick={() => sendOffer(offer.id)}
+                          style={{
+                            padding: '4px 8px',
+                            border: 'none',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Versenden
+                        </button>
+                        <button
+                          onClick={() => cancelOffer(offer.id)}
+                          style={{
+                            padding: '4px 8px',
+                            border: 'none',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Stornieren
+                        </button>
+                      </>
                     )}
                     {offer.status === 'angenommen' && (
                       <button
