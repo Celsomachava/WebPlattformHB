@@ -126,10 +126,14 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId }) =>
       <style>{`
         @media print {
           * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
-          body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
-          .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3, p, header, footer { display: none !important; }
-          .print-view { display: block !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; }
-          @page { size: A4 portrait; margin: 0; }
+          body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; }
+          .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3:not(.print-view h2):not(.print-view h3), p:not(.print-view p), header, footer { display: none !important; }
+          .print-view { display: block !important; margin: 0 !important; padding: 5mm !important; width: 100% !important; max-width: 100% !important; page-break-inside: avoid; }
+          .print-view table { width: 100% !important; font-size: 6px !important; page-break-inside: auto; table-layout: fixed; }
+          .print-view tr { page-break-inside: avoid; page-break-after: auto; }
+          .print-view td, .print-view th { padding: 1px !important; word-wrap: break-word; overflow: hidden; }
+          @page { size: A4 landscape; margin: 0; }
+          .print-view { transform: scale(0.98); transform-origin: top left; }
         }
         .print-view { display: none; }
       `}</style>
@@ -260,217 +264,217 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId }) =>
       </div>
 
       {/* PRINT VIEW */}
-      <div className="print-view" style={{ maxWidth: '210mm', margin: '0 auto', backgroundColor: 'white', padding: '10mm' }}>
-        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-          <h2 style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>Gefährdungsbeurteilung nach §5 und § Arbeitsschutzgesetz für Arbeiten im Außendienst</h2>
-          <div style={{ fontSize: '9px' }}>Heduschka Dienstleister Betriebsanleitung/ Fachbauer Betriebsanweisung</div>
+      <div className="print-view" style={{ width: '100%', maxWidth: '297mm', margin: '0', backgroundColor: 'white', padding: '0' }}>
+        <div style={{ textAlign: 'center', marginBottom: '5px' }}>
+          <h2 style={{ margin: 0, fontSize: '10px', fontWeight: 'bold' }}>Gefährdungsbeurteilung nach §5 und § Arbeitsschutzgesetz für Arbeiten im Außendienst</h2>
+          <div style={{ fontSize: '7px' }}>Heduschka Dienstleister Betriebsanleitung/ Fachbauer Betriebsanweisung</div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000', fontSize: '10px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '5px', border: '1px solid #000', fontSize: '6px' }}>
           <tbody>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold', width: '120px' }}>Unternehmen:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.unternehmen}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold', width: '120px' }}>Arbeitsbereich/ Baustelle:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.arbeitsbereich}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold', width: '80px' }}>Unternehmen:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.unternehmen}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold', width: '100px' }}>Arbeitsbereich/ Baustelle:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.arbeitsbereich}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold' }}>Verantwortlicher:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.verantwortlicher}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold' }}>KP vor Ort:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold' }}>Verantwortlicher:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.verantwortlicher}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold' }}>KP vor Ort:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
           </tbody>
         </table>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000', fontSize: '10px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '5px', border: '1px solid #000', fontSize: '6px' }}>
           <tbody>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold', width: '120px' }}>Tätigkeiten:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }} colSpan={3}>{data.taetigkeit}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold', width: '80px' }}>Tätigkeiten:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }} colSpan={3}>{data.taetigkeit}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold' }}>Arbeitsauftrag:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.arbeitsauftrag}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', fontWeight: 'bold', width: '120px' }}>Auftraggeber:</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.auftraggeber}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold' }}>Arbeitsauftrag:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.arbeitsauftrag}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', fontWeight: 'bold', width: '80px' }}>Auftraggeber:</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.auftraggeber}</td>
             </tr>
           </tbody>
         </table>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000', fontSize: '9px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '6px', border: '1px solid #000', fontSize: '7px' }}>
           <thead>
             <tr>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>Gefährdungen:</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>ja</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>nein</th>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>Bemerkungen</th>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>erforderliche PSA:</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>ja</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>nein</th>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>Bemerkungen</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>Gefährdungen:</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '25px' }}>ja</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '25px' }}>nein</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>Bemerkungen</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>erforderliche PSA:</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '25px' }}>ja</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '25px' }}>nein</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>Bemerkungen</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Mechanische Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.mechanische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.mechanische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Schutzhelm</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.schutzhelm ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.schutzhelm ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Mechanische Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.mechanische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.mechanische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Schutzhelm</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.schutzhelm ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.schutzhelm ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Elektrische Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.elektrische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.elektrische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Schutzbrille S3</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.schutzbrille ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.schutzbrille ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Elektrische Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.elektrische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.elektrische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Schutzbrille S3</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.schutzbrille ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.schutzbrille ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Chemische Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.chemische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.chemische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Schutzhandschuhe (Leder, Kälte)</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.handschuhe ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.handschuhe ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Chemische Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.chemische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.chemische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Schutzhandschuhe</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.handschuhe ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.handschuhe ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Biologische Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.biologische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.biologische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Sicherheitsschuhe</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>x</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Biologische Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.biologische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.biologische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Sicherheitsschuhe</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>x</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Brand- und Explosionsgefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.brand_explosion ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.brand_explosion ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Gehörschutz</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.gehoerschutz ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.gehoerschutz ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Brand-/Explosionsgefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.brand_explosion ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.brand_explosion ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Gehörschutz</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.gehoerschutz ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.gehoerschutz ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Thermische Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.thermische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.thermische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Atemschutz</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.ffp2_maske ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.ffp2_maske ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>FFP2 Maske bzw. Filtermaske</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Thermische Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.thermische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.thermische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Atemschutz FFP2</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.ffp2_maske ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.ffp2_maske ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Physikalische Belastungen</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.physikalische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.physikalische_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Hautschutz</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.einweghandschuhe ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.einweghandschuhe ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Einweghandschuhe Nitril/Latex</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Physikalische Belastungen</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.physikalische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.physikalische_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Einweghandschuhe</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.einweghandschuhe ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.einweghandschuhe ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Gefährdung durch Umgebungsbedingungen</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.umgebungsbedingungen ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.umgebungsbedingungen ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Hautschutz, schütz</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>x</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Umgebungsbedingungen</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.umgebungsbedingungen ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.umgebungsbedingungen ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Hautschutz</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>x</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Verkehrswege</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.verkehrswege ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.verkehrswege ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Fallschutz</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Verkehrswege</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.verkehrswege ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.verkehrswege ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Fallschutz</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Sonstige Gefährdung</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.sonstige_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.sonstige_gefaehrdung ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Sonstige Gefährdung</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.sonstige_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.sonstige_gefaehrdung ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}></td>
             </tr>
           </tbody>
         </table>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000', fontSize: '9px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '5px', border: '1px solid #000', fontSize: '6px' }}>
           <thead>
             <tr>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>Arbeits-/ Hilfsmittel:</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>ja</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>nein</th>
-              <th style={{ padding: '4px', border: '1px solid #000', textAlign: 'left' }}>besondere Genehmigung:</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>ja</th>
-              <th style={{ padding: '4px', border: '1px solid #000', width: '30px' }}>nein</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>Arbeits-/ Hilfsmittel:</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '20px' }}>ja</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '20px' }}>nein</th>
+              <th style={{ padding: '2px', border: '1px solid #000', textAlign: 'left' }}>besondere Genehmigung:</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '20px' }}>ja</th>
+              <th style={{ padding: '2px', border: '1px solid #000', width: '20px' }}>nein</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Leiter/ Gerüst</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.leiter_geruest ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.leiter_geruest ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Schweißerlaubnis</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.schweisserlaubnis ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.schweisserlaubnis ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Leiter/ Gerüst</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.leiter_geruest ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.leiter_geruest ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Schweißerlaubnis</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.schweisserlaubnis ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.schweisserlaubnis ? 'x' : ''}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Sonstige</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Befahrschein</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{data.befahrschein ? 'x' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }}>{!data.befahrschein ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Sonstige</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Befahrschein</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{data.befahrschein ? 'x' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }}>{!data.befahrschein ? 'x' : ''}</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }} colSpan={3}></td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Sonstige</td>
-              <td style={{ padding: '4px', border: '1px solid #000', textAlign: 'center' }} colSpan={2}>{data.besondere_genehmigung}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }} colSpan={3}></td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Sonstige</td>
+              <td style={{ padding: '2px', border: '1px solid #000', textAlign: 'center' }} colSpan={2}>{data.besondere_genehmigung}</td>
             </tr>
           </tbody>
         </table>
 
-        <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '5px' }}>Spezifische Sicherheitshinweise:</div>
+        <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '3px' }}>Spezifische Sicherheitshinweise:</div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', border: '1px solid #000', fontSize: '9px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '5px', border: '1px solid #000', fontSize: '6px' }}>
           <tbody>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>Durchgeführte Beurteilung / Unterweisung vor Ort</td>
-              <td style={{ padding: '4px', border: '1px solid #000', width: '80px' }}>Datum</td>
-              <td style={{ padding: '4px', border: '1px solid #000', width: '150px' }}>Name, Vorname</td>
-              <td style={{ padding: '4px', border: '1px solid #000', width: '150px' }}>Unterschrift</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>Durchgeführte Beurteilung / Unterweisung vor Ort</td>
+              <td style={{ padding: '2px', border: '1px solid #000', width: '60px' }}>Datum</td>
+              <td style={{ padding: '2px', border: '1px solid #000', width: '120px' }}>Name, Vorname</td>
+              <td style={{ padding: '2px', border: '1px solid #000', width: '120px' }}>Unterschrift</td>
             </tr>
             <tr>
-              <td style={{ padding: '4px', border: '1px solid #000', height: '30px' }}>{data.unterweisung_durchgefuehrt ? 'Ja' : ''}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.unterweisung_datum}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.unterweisung_name}</td>
-              <td style={{ padding: '4px', border: '1px solid #000' }}>{data.unterweisung_unterschrift}</td>
+              <td style={{ padding: '2px', border: '1px solid #000', height: '20px' }}>{data.unterweisung_durchgefuehrt ? 'Ja' : ''}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.unterweisung_datum}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.unterweisung_name}</td>
+              <td style={{ padding: '2px', border: '1px solid #000' }}>{data.unterweisung_unterschrift}</td>
             </tr>
           </tbody>
         </table>
 
-        <div style={{ fontSize: '8px', textAlign: 'center', marginTop: '10px' }}>
+        <div style={{ fontSize: '6px', textAlign: 'center', marginTop: '5px' }}>
           Heduschka GmbH • Buchwälder Str. 28 • 01968 Senftenberg
         </div>
       </div>
