@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { PruefprotokollDGUV201004 } from '../../types/pruefprotokoll';
 import { pruefprotokollService } from '../../services/pruefprotokollService';
 import { validatePruefprotokoll } from '../../utils/pruefprotokollValidation';
+import { PruefprotokollPDF } from './pdf/PruefprotokollPDF';
 
 interface Props {
   serviceAnfrageId: string;
@@ -100,7 +102,13 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
     <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
         <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Speichern</button>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Drucken</button>
+        <PDFDownloadLink
+          document={<PruefprotokollPDF data={data} />}
+          fileName={`Pruefprotokoll_DGUV_${data.kalenderjahr}_${new Date().toISOString().split('T')[0]}.pdf`}
+          style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', textDecoration: 'none' }}
+        >
+          {({ loading }) => (loading ? 'Generiere PDF...' : 'PDF herunterladen')}
+        </PDFDownloadLink>
       </div>
 
       <style>{`
@@ -108,8 +116,8 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
           * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
           body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
           .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3, p, header, footer { display: none !important; }
-          .print-view { display: block !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; }
-          @page { size: A4 portrait; margin: 0; }
+          .print-view { display: block !important; margin: 0 auto !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+          @page { size: A4 portrait; margin: 10mm; }
         }
         .print-view { display: none; }
       `}</style>

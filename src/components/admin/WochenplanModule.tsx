@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { Wochenplan, WochenplanRow } from '../../types/wochenplan';
 import { wochenplanService } from '../../services/wochenplanService';
 import { validateRow, validateWochenplan, calculateDailyTotals, calculateWeeklyTotal } from '../../utils/wochenplanValidation';
+import { WochenplanPDF } from './pdf/WochenplanPDF';
 
 interface WochenplanModuleProps {
   serviceAnfrageId: string;
@@ -132,9 +134,7 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+
 
   if (loading) return <div style={{ padding: '20px' }}>Lade Wochenplan...</div>;
   if (!plan) return <div style={{ padding: '20px' }}>Kein Wochenplan gefunden</div>;
@@ -149,9 +149,9 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
           * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
           body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
           .no-print, nav, button, .sidebar, .topbar, h1, h2, h3, p, header, footer, .wochenplan-container > div:first-child { display: none !important; }
-          .wochenplan-container { margin: 0 !important; padding: 15mm !important; max-width: 100% !important; width: 100% !important; }
-          table { page-break-inside: avoid; }
-          @page { size: A4 landscape; margin: 0; }
+          .wochenplan-container { margin: 0 auto !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+          table { page-break-inside: avoid; font-size: 10px !important; }
+          @page { size: A4 landscape; margin: 10mm; }
         }
       `}</style>
 
@@ -161,9 +161,13 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
           <button onClick={handleSave} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
             Speichern
           </button>
-          <button onClick={handlePrint} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Drucken
-          </button>
+          <PDFDownloadLink
+            document={<WochenplanPDF data={plan} />}
+            fileName={`Wochenplan_KW${plan.kalenderwoche}_${new Date().toISOString().split('T')[0]}.pdf`}
+            style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', textDecoration: 'none' }}
+          >
+            {({ loading }) => (loading ? 'Generiere PDF...' : 'PDF herunterladen')}
+          </PDFDownloadLink>
         </div>
       </div>
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GefaehrdungsbeurteilungAussendienst } from '../../types/gefaehrdungsbeurteilung';
 import { gefaehrdungsbeurteilungService } from '../../services/gefaehrdungsbeurteilungService';
 import { validateGefaehrdungsbeurteilung } from '../../utils/gefaehrdungsbeurteilungValidation';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { GefaehrdungsbeurteilungPDF } from './pdf/GefaehrdungsbeurteilungPDF';
 
 interface Props {
   serviceAnfrageId: string;
@@ -141,7 +143,13 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId }) =>
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
         <button onClick={save} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>Speichern</button>
         <button onClick={finalSubmit} disabled={isReadOnly} style={{ padding: '10px 20px', backgroundColor: isReadOnly ? '#6c757d' : '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}>Final Abgeben</button>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Drucken</button>
+        <PDFDownloadLink document={<GefaehrdungsbeurteilungPDF data={data} />} fileName={`Gefaehrdungsbeurteilung_${data.datum}.pdf`}>
+          {({ loading }) => (
+            <button style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+              {loading ? 'PDF wird erstellt...' : 'PDF herunterladen'}
+            </button>
+          )}
+        </PDFDownloadLink>
         {isReadOnly && <span style={{ color: '#dc3545', fontWeight: 'bold' }}>🔒 SCHREIBGESCHÜTZT</span>}
       </div>
 

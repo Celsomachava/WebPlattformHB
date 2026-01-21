@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ArbeitsauftragServicebericht, ArbeitsauftragZeit } from '../../types/arbeitsauftrag';
 import { arbeitsauftragService } from '../../services/arbeitsauftragService';
 import { validateArbeitsauftrag } from '../../utils/arbeitsauftragValidation';
+import { ArbeitsauftragPDF } from './pdf/ArbeitsauftragPDF';
 
 interface Props {
   serviceAnfrageId: string;
@@ -130,15 +132,21 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
           * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
           body, html { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
           .no-print, nav, button, .sidebar, .topbar, .form-view, h1, h2, h3, p, header, footer { display: none !important; }
-          .print-view { display: block !important; margin: 0 !important; padding: 15mm !important; width: 100% !important; max-width: 100% !important; }
-          @page { size: A4 portrait; margin: 0; }
+          .print-view { display: block !important; margin: 0 auto !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+          @page { size: A4 portrait; margin: 10mm; }
         }
         .print-view { display: none; }
       `}</style>
 
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
         <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Speichern</button>
-        <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Drucken</button>
+        <PDFDownloadLink
+          document={<ArbeitsauftragPDF data={data} />}
+          fileName={`Arbeitsauftrag_${data.datum}_${new Date().toISOString().split('T')[0]}.pdf`}
+          style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', textDecoration: 'none' }}
+        >
+          {({ loading }) => (loading ? 'Generiere PDF...' : 'PDF herunterladen')}
+        </PDFDownloadLink>
       </div>
 
       {errors.length > 0 && <div className="no-print" style={{ padding: '10px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px' }}>{errors.map((e, i) => <div key={i}>{e}</div>)}</div>}
@@ -333,7 +341,7 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
       </div>
 
       {/* PRINT VIEW */}
-      <div className="print-view" style={{ maxWidth: '210mm', margin: '0 auto', backgroundColor: 'white', padding: '10mm' }}>
+      <div className="print-view" style={{ maxWidth: '100%', margin: '0 auto', backgroundColor: 'white', padding: '0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>Heduschka <span style={{ fontSize: '14px', fontWeight: 'normal' }}>GmbH</span></h1>
