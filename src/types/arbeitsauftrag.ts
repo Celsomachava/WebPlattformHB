@@ -44,11 +44,18 @@ export interface ArbeitsauftragServicebericht {
   ausgefuehrte_arbeiten: string;
   
   // Material
-  material_grobstaubfilter: boolean;
-  material_schwebstofffilter: boolean;
-  material_aktivkohlefilter: boolean;
-  material_umluftfilter: boolean;
-  material_sonstiges: string;
+  material_zeile1_col1: string;
+  material_zeile1_col2: string;
+  material_zeile1_col3: string;
+  material_zeile2_col1: string;
+  material_zeile2_col2: string;
+  material_zeile2_col3: string;
+  material_zeile3_col1: string;
+  material_zeile3_col2: string;
+  material_zeile3_col3: string;
+  material_zeile4_col1: string;
+  material_zeile4_col2: string;
+  material_zeile4_col3: string;
   
   // Bemerkungen
   bemerkungen: string;

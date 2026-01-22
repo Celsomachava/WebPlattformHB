@@ -7,9 +7,10 @@ import { ArbeitsauftragPDF } from './pdf/ArbeitsauftragPDF';
 
 interface Props {
   serviceAnfrageId: string;
+  onBack?: () => void;
 }
 
-const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
+const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId, onBack }) => {
   const [data, setData] = useState<ArbeitsauftragServicebericht | null>(null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
@@ -20,11 +21,15 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
 
   const loadData = async () => {
     try {
-      const existing = await arbeitsauftragService.getByServiceRequest(serviceAnfrageId);
-      if (existing) {
-        setData(existing);
-      } else {
+      if (serviceAnfrageId === 'new') {
         setData(createEmpty());
+      } else {
+        const existing = await arbeitsauftragService.get(serviceAnfrageId);
+        if (existing) {
+          setData(existing);
+        } else {
+          setData(createEmpty());
+        }
       }
     } catch (error) {
       setErrors(['Fehler beim Laden']);
@@ -54,11 +59,18 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
     arbeitsauftrag: '',
     zeiten: [],
     ausgefuehrte_arbeiten: '',
-    material_grobstaubfilter: false,
-    material_schwebstofffilter: false,
-    material_aktivkohlefilter: false,
-    material_umluftfilter: false,
-    material_sonstiges: '',
+    material_zeile1_col1: '',
+    material_zeile1_col2: '',
+    material_zeile1_col3: '',
+    material_zeile2_col1: '',
+    material_zeile2_col2: '',
+    material_zeile2_col3: '',
+    material_zeile3_col1: '',
+    material_zeile3_col2: '',
+    material_zeile3_col3: '',
+    material_zeile4_col1: '',
+    material_zeile4_col2: '',
+    material_zeile4_col3: '',
     bemerkungen: '',
     unterschrift_monteur: '',
     unterschrift_kunde: '',
@@ -139,6 +151,7 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
       `}</style>
 
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        {onBack && <button onClick={onBack} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>← Zurück</button>}
         <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Speichern</button>
         <PDFDownloadLink
           document={<ArbeitsauftragPDF data={data} />}
@@ -308,15 +321,19 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>5. Material</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <label><input type="checkbox" checked={data.material_grobstaubfilter} onChange={(e) => u('material_grobstaubfilter', e.target.checked)} /> Grobstaubfilter S8.2G</label>
-            <label><input type="checkbox" checked={data.material_schwebstofffilter} onChange={(e) => u('material_schwebstofffilter', e.target.checked)} /> Schwebstofffilter S8.3S</label>
-            <label><input type="checkbox" checked={data.material_aktivkohlefilter} onChange={(e) => u('material_aktivkohlefilter', e.target.checked)} /> Aktivkohlefilter S8.4C-AB</label>
-            <label><input type="checkbox" checked={data.material_umluftfilter} onChange={(e) => u('material_umluftfilter', e.target.checked)} /> Umluftfilter UA31-1S</label>
-          </div>
-          <div style={{ marginTop: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Sonstiges</label>
-            <input type="text" value={data.material_sonstiges} onChange={(e) => u('material_sonstiges', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+            <input type="text" value={data.material_zeile1_col1} onChange={(e) => u('material_zeile1_col1', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile1_col2} onChange={(e) => u('material_zeile1_col2', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile1_col3} onChange={(e) => u('material_zeile1_col3', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile2_col1} onChange={(e) => u('material_zeile2_col1', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile2_col2} onChange={(e) => u('material_zeile2_col2', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile2_col3} onChange={(e) => u('material_zeile2_col3', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile3_col1} onChange={(e) => u('material_zeile3_col1', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile3_col2} onChange={(e) => u('material_zeile3_col2', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile3_col3} onChange={(e) => u('material_zeile3_col3', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile4_col1} onChange={(e) => u('material_zeile4_col1', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile4_col2} onChange={(e) => u('material_zeile4_col2', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            <input type="text" value={data.material_zeile4_col3} onChange={(e) => u('material_zeile4_col3', e.target.value)} style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
           </div>
         </div>
 
@@ -326,14 +343,22 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '11px', marginBottom: '15px', lineHeight: '1.6' }}>
+            Reklamationen nur innerhalb von 8 Tagen nach unserer erbrachten Leistung. Für alle Maschinen, Ersatzteile und Waren gelten die Garantiebestimmungen des Herstellers. Die gelieferte Ware bleibt bis zur vollständigen Bezahlung unser Eigentum.
+            <br /><br />
+            Mit dieser Unterschrift wird bestätigt, dass die Arbeiten ordnungsgemäß durchgeführt wurden, die oben genannte Reise- und Arbeitszeit, sowie km angefallen sind und auf dem Materialschein aufgeführten Ersatzteile benötigt wurden.
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>7. Unterschriften</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Unterschrift Monteur *</label>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Unterschrift/ Monteur *</label>
               <input type="text" value={data.unterschrift_monteur} onChange={(e) => u('unterschrift_monteur', e.target.value)} placeholder="Name eingeben" style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Unterschrift Kunde</label>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Stempel/ Unterschrift Kunde bzw. Bevollmächtigte/ Druckbuchstaben</label>
               <input type="text" value={data.unterschrift_kunde} onChange={(e) => u('unterschrift_kunde', e.target.value)} placeholder="Name eingeben" style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
           </div>
@@ -474,37 +499,48 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId }) => {
 
         <div style={{ marginBottom: '10px' }}>
           <div style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '5px' }}>Material:</div>
-          <div style={{ fontSize: '11px', lineHeight: '1.6' }}>
-            {data.material_grobstaubfilter && <div>Grobstaubfilter S8.2G</div>}
-            {data.material_schwebstofffilter && <div>Schwebstofffilter S8.3S</div>}
-            {data.material_aktivkohlefilter && <div>Aktivkohlefilter S8.4C-AB</div>}
-            {data.material_umluftfilter && <div>Umluftfilter UA31-1S</div>}
-            {data.material_sonstiges && <div>{data.material_sonstiges}</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px', fontSize: '10px' }}>
+            <div>{data.material_zeile1_col1}</div>
+            <div>{data.material_zeile1_col2}</div>
+            <div>{data.material_zeile1_col3}</div>
+            <div>{data.material_zeile2_col1}</div>
+            <div>{data.material_zeile2_col2}</div>
+            <div>{data.material_zeile2_col3}</div>
+            <div>{data.material_zeile3_col1}</div>
+            <div>{data.material_zeile3_col2}</div>
+            <div>{data.material_zeile3_col3}</div>
+            <div>{data.material_zeile4_col1}</div>
+            <div>{data.material_zeile4_col2}</div>
+            <div>{data.material_zeile4_col3}</div>
           </div>
         </div>
 
         <div style={{ fontSize: '9px', marginBottom: '15px', lineHeight: '1.4' }}>
-          Rücksendungen nur innerhalb von 8 Tagen nach unserer schriftlichen Leistung. Für alle Maschinen, Ersatzteile und Waren gelten die Gewährleistungsbestimmungen des Herstellers. Die mit dieser Unterschrift wird bestätigt, dass die Arbeiten ordnungsgemäß durchgeführt wurden, die den genannten Reise- und Arbeitszeit, sowie km angefallen sind und dass die Materialkosten in angeführter Ersatzteile bezahlt werden.
+          Reklamationen nur innerhalb von 8 Tagen nach unserer erbrachten Leistung. Für alle Maschinen, Ersatzteile und Waren gelten die Garantiebestimmungen des Herstellers. Die gelieferte Ware bleibt bis zur vollständigen Bezahlung unser Eigentum.
+          <br /><br />
+          Mit dieser Unterschrift wird bestätigt, dass die Arbeiten ordnungsgemäß durchgeführt wurden, die oben genannte Reise- und Arbeitszeit, sowie km angefallen sind und auf dem Materialschein aufgeführten Ersatzteile benötigt wurden.
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
           <tbody>
             <tr>
               <td style={{ padding: '8px', border: '1px solid #000', width: '50%', verticalAlign: 'bottom' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '30px' }}>Unterschrift Monteur</div>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '5px', fontSize: '11px' }}>{data.unterschrift_monteur}</div>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '5px' }}>Unterschrift/ Monteur</div>
+                <div style={{ fontSize: '10px', marginBottom: '30px' }}>{data.unterschrift_monteur}</div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '5px', minHeight: '40px' }}></div>
               </td>
               <td style={{ padding: '8px', border: '1px solid #000', width: '50%', verticalAlign: 'bottom' }}>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '30px' }}>Stempel/ Unterschrift Kunde bzw. Bevollmächtigter Druckbuchstaben</div>
-                <div style={{ borderTop: '1px solid #000', paddingTop: '5px', fontSize: '11px' }}>{data.unterschrift_kunde}</div>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '5px' }}>Stempel/ Unterschrift Kunde bzw. Bevollmächtigte/ Druckbuchstaben</div>
+                <div style={{ fontSize: '10px', marginBottom: '30px' }}>{data.unterschrift_kunde}</div>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '5px', minHeight: '40px' }}></div>
               </td>
             </tr>
           </tbody>
         </table>
 
         <div style={{ fontSize: '9px', textAlign: 'center', marginTop: '15px', borderTop: '1px solid #000', paddingTop: '5px' }}>
-          &gt;&gt; Es gelten unsere allgemeinen Geschäftsbedingungen (AGB), die Sie umständig und unter www.heduschka.de finden &lt;&lt;<br />
-          Heduschka GmbH • Buchwälder Str. 28 • 01968 Senftenberg • Tel. 03573 79 32 • Fax 03573 79 33 • info@heduschka.de • www.heduschka.de
+          &gt;&gt; Es gelten unsere allgemeinen Geschäftsbedingungen (AGB), die sie umseitig und unter www.heduschka.de finden &lt;&lt;<br />
+          Heduschka GmbH . Buchwalder Str. 28 . 01968 Senftenberg . Tel. 03573/ 79 32 25 . Fax 03573 30 66 . www.heduschka.de
         </div>
       </div>
     </div>

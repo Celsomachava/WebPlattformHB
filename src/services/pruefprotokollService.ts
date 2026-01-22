@@ -4,6 +4,49 @@ import { authService } from './simple-auth';
 class PruefprotokollService {
   private baseUrl = '/api/pruefprotokoll';
 
+  async getAll(): Promise<PruefprotokollDGUV201004[]> {
+    try {
+      const response = await fetch(this.baseUrl, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_pruefprotokoll') || '[]');
+      return pending;
+    }
+  }
+
+  async get(id: string): Promise<PruefprotokollDGUV201004 | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_pruefprotokoll') || '[]');
+      return pending.find((p: PruefprotokollDGUV201004) => p.id === id) || null;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await fetch(`${this.baseUrl}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_pruefprotokoll') || '[]');
+      const filtered = pending.filter((p: PruefprotokollDGUV201004) => p.id !== id);
+      localStorage.setItem('pending_pruefprotokoll', JSON.stringify(filtered));
+    }
+  }
+
   async getByServiceRequest(serviceAnfrageId: string): Promise<PruefprotokollDGUV201004 | null> {
     try {
       const response = await fetch(`${this.baseUrl}/${serviceAnfrageId}`, {

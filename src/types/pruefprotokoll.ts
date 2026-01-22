@@ -19,23 +19,24 @@ export interface PruefprotokollDGUV201004 {
   fahrgestell_nr: string;
   bs_km_stand: string;
   baujahr: string;
+  motor: string;
+  motor_hersteller_typ: string;
   e_anlage: string;
   
-  // Section 3 - Motor / Filteranlagen
-  motor_hersteller_typ: string;
-  filter_seriennr: string;
-  filter_hersteller_typ: string;
-  filter_baujahr: string;
-  filter_gewicht: string;
-  ueberdruck_typ: string;
-  ueberdruck_seriennr: string;
-  umluft_typ: string;
-  umluft_seriennr: string;
+  // Section 3 - Atemluft - Filteranlage
+  atemluft_hersteller_typ: string;
+  atemluft_seriennr: string;
+  atemluft_baujahr: string;
+  atemluft_gewicht: string;
+  ueberdruck_ueberwachung_typ: string;
+  ueberdruck_ueberwachung_seriennr: string;
+  umluft_filteranlage_typ: string;
+  umluft_filteranlage_seriennr: string;
   
   // Section 4 - Dokumentation
   betriebsanleitung_vorhanden: string;
   filterkarte_vorhanden: string;
-  hinweisschild_vorhanden: string;
+  hinweisschild_kabinendruck: string;
   
   // Section 5 - Filteranlage montiert
   montage_auf_dach: boolean;
@@ -88,30 +89,30 @@ export interface PruefprotokollDGUV201004 {
   hebeschiebefenster_blockiert: string;
   aussenluft_heizung_abgedichtet: string;
   durchfuehrungen_abgedichtet: string;
+  ueberdruck_laufend: string;
+  luftzufuhr_laufend: string;
   
   // Section 12 - Klimaanlage
+  klima_vorhanden: string;
   klima_typ_hersteller: string;
   klima_kondensator: string;
   klima_verdampfer: string;
+  kaeltemittel: string;
+  kompressor: string;
   klima_umluftwirkung: string;
   
   // Section 13 - Heizung
+  heizung_vorhanden: string;
   heizung_typ_hersteller: string;
   heizung_umluftbetrieb: string;
   
-  // Section 14 - Luftzufuhr / Kälteanlage
-  luftzufuhr_vorhanden: string;
-  kaeltemittel: string;
-  kompressor: string;
-  kaelteanlage_vorhanden: string;
-  
-  // Section 15 - Abschluss / Kontrolle
+  // Section 15 - Mängel/Bemerkungen
   maengel_bemerkungen: string;
   nachkontrolle_erforderlich: string;
   ort: string;
   protokoll_datum: string;
-  auftraggeber_unterschrift: string;
-  servicetechniker_unterschrift: string;
+  auftraggeber_betreiber: string;
+  servicetechniker: string;
   
   created_at: number;
   updated_at: number;

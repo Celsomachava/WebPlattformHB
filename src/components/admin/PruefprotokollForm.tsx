@@ -7,9 +7,10 @@ import { PruefprotokollPDF } from './pdf/PruefprotokollPDF';
 
 interface Props {
   serviceAnfrageId: string;
+  onBack?: () => void;
 }
 
-const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
+const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId, onBack }) => {
   const [data, setData] = useState<PruefprotokollDGUV201004 | null>(null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
@@ -20,11 +21,15 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
 
   const loadData = async () => {
     try {
-      const existing = await pruefprotokollService.getByServiceRequest(serviceAnfrageId);
-      if (existing) {
-        setData(existing);
-      } else {
+      if (serviceAnfrageId === 'new') {
         setData(createEmpty());
+      } else {
+        const existing = await pruefprotokollService.get(serviceAnfrageId);
+        if (existing) {
+          setData(existing);
+        } else {
+          setData(createEmpty());
+        }
       }
     } catch (error) {
       setErrors(['Fehler beim Laden']);
@@ -40,10 +45,10 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
     auftraggeber_name: '', auftraggeber_strasse: '', auftraggeber_ort: '',
     betreiber_name: '', betreiber_strasse: '', betreiber_ort: '',
     projekt: '', kostenstelle: '',
-    fahrzeug_geraet: '', hersteller_typ: '', fahrgestell_nr: '', bs_km_stand: '', baujahr: '', e_anlage: '',
-    motor_hersteller_typ: '', filter_seriennr: '', filter_hersteller_typ: '', filter_baujahr: '', filter_gewicht: '',
-    ueberdruck_typ: '', ueberdruck_seriennr: '', umluft_typ: '', umluft_seriennr: '',
-    betriebsanleitung_vorhanden: '', filterkarte_vorhanden: '', hinweisschild_vorhanden: '',
+    fahrzeug_geraet: '', hersteller_typ: '', fahrgestell_nr: '', bs_km_stand: '', baujahr: '', motor: '', motor_hersteller_typ: '', e_anlage: '',
+    atemluft_hersteller_typ: '', atemluft_seriennr: '', atemluft_baujahr: '', atemluft_gewicht: '',
+    ueberdruck_ueberwachung_typ: '', ueberdruck_ueberwachung_seriennr: '', umluft_filteranlage_typ: '', umluft_filteranlage_seriennr: '',
+    betriebsanleitung_vorhanden: '', filterkarte_vorhanden: '', hinweisschild_kabinendruck: '',
     montage_auf_dach: false, montage_links_hinter_kabine: false, montage_rechts_neben_kabine: false,
     montage_direkt_hinter_kabine: false, montage_links_neben_kabine: false, montage_rechts_hinter_kabine: false,
     sicherer_standplatz: '', zugangssysteme_vorhanden: '', rops_fops_unbeschaedigt: '', ruettelfest_montiert: '', vorgesehene_anschlagpunkte_genutzt: '',
@@ -51,12 +56,11 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
     kontrollanzeige_vorhanden: '', optische_warnung: '', akustische_warnung: '', ansprechzeit_ok: '', alarm_untergrenze: '', alarm_obergrenze: '',
     kontrollanzeige_aktivkohlefilter: '', kontrollanzeige_partikelfilter: '', betriebsstundenzaehler_vorhanden: '', betriebsanzeige_gruen_sichtbar: '',
     auto_einschaltung_hauptmotor: '', hinweisschild_frischluft: '', fluchtfiltergeraet_vorhanden: '', funkverkehr_vorhanden: '', notausstieg_blockiert: '', notausstieg_nothammer: '', laermgrenzwert_unter_85db: '',
-    kabine_abdichtung_ok: '', hebeschiebefenster_blockiert: '', aussenluft_heizung_abgedichtet: '', durchfuehrungen_abgedichtet: '',
-    klima_typ_hersteller: '', klima_kondensator: '', klima_verdampfer: '', klima_umluftwirkung: '',
-    heizung_typ_hersteller: '', heizung_umluftbetrieb: '',
-    luftzufuhr_vorhanden: '', kaeltemittel: '', kompressor: '', kaelteanlage_vorhanden: '',
+    kabine_abdichtung_ok: '', hebeschiebefenster_blockiert: '', aussenluft_heizung_abgedichtet: '', durchfuehrungen_abgedichtet: '', ueberdruck_laufend: '', luftzufuhr_laufend: '',
+    klima_vorhanden: '', klima_typ_hersteller: '', klima_kondensator: '', klima_verdampfer: '', kaeltemittel: '', kompressor: '', klima_umluftwirkung: '',
+    heizung_vorhanden: '', heizung_typ_hersteller: '', heizung_umluftbetrieb: '',
     maengel_bemerkungen: '', nachkontrolle_erforderlich: '', ort: '', protokoll_datum: new Date().toISOString().split('T')[0],
-    auftraggeber_unterschrift: '', servicetechniker_unterschrift: '',
+    auftraggeber_betreiber: '', servicetechniker: '',
     created_at: Date.now(), updated_at: Date.now()
   });
 
@@ -101,6 +105,7 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
   return (
     <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        {onBack && <button onClick={onBack} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>← Zurück</button>}
         <button onClick={save} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Speichern</button>
         <PDFDownloadLink
           document={<PruefprotokollPDF data={data} />}
@@ -197,6 +202,14 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
               <input type="text" value={data.baujahr} onChange={(e) => u('baujahr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Motor</label>
+              <input type="text" value={data.motor} onChange={(e) => u('motor', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Hersteller/Typ</label>
+              <input type="text" value={data.motor_hersteller_typ} onChange={(e) => u('motor_hersteller_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            </div>
+            <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>E-Anlage</label>
               <input type="text" value={data.e_anlage} onChange={(e) => u('e_anlage', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
@@ -204,56 +217,51 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>3. Motor / Filteranlagen</h3>
+          <h3>3. Atemluft - Filteranlage</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Motor Hersteller/Typ</label>
-              <input type="text" value={data.motor_hersteller_typ} onChange={(e) => u('motor_hersteller_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Hersteller/Typ</label>
+              <input type="text" value={data.atemluft_hersteller_typ} onChange={(e) => u('atemluft_hersteller_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter Serien-Nr.</label>
-              <input type="text" value={data.filter_seriennr} onChange={(e) => u('filter_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Serien-Nr.</label>
+              <input type="text" value={data.atemluft_seriennr} onChange={(e) => u('atemluft_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter Hersteller/Typ</label>
-              <input type="text" value={data.filter_hersteller_typ} onChange={(e) => u('filter_hersteller_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Baujahr</label>
+              <input type="text" value={data.atemluft_baujahr} onChange={(e) => u('atemluft_baujahr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter Baujahr</label>
-              <input type="text" value={data.filter_baujahr} onChange={(e) => u('filter_baujahr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Gewicht</label>
+              <input type="text" value={data.atemluft_gewicht} onChange={(e) => u('atemluft_gewicht', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Filter Gewicht</label>
-              <input type="text" value={data.filter_gewicht} onChange={(e) => u('filter_gewicht', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Überdruck - Überwachungssystem Typ</label>
+              <input type="text" value={data.ueberdruck_ueberwachung_typ} onChange={(e) => u('ueberdruck_ueberwachung_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Überdruck Typ</label>
-              <input type="text" value={data.ueberdruck_typ} onChange={(e) => u('ueberdruck_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Überdruck - Überwachungssystem Serien-Nr.</label>
+              <input type="text" value={data.ueberdruck_ueberwachung_seriennr} onChange={(e) => u('ueberdruck_ueberwachung_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Überdruck Serien-Nr.</label>
-              <input type="text" value={data.ueberdruck_seriennr} onChange={(e) => u('ueberdruck_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Umluft - Filteranlage Typ</label>
+              <input type="text" value={data.umluft_filteranlage_typ} onChange={(e) => u('umluft_filteranlage_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Umluft Typ</label>
-              <input type="text" value={data.umluft_typ} onChange={(e) => u('umluft_typ', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Umluft Serien-Nr.</label>
-              <input type="text" value={data.umluft_seriennr} onChange={(e) => u('umluft_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Umluft - Filteranlage Serien-Nr.</label>
+              <input type="text" value={data.umluft_filteranlage_seriennr} onChange={(e) => u('umluft_filteranlage_seriennr', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
           </div>
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>4. Dokumentation</h3>
           <YN label="Betriebsanleitung/Filteranlage vorhanden" field="betriebsanleitung_vorhanden" />
           <YN label="Filterkarte vorhanden" field="filterkarte_vorhanden" />
-          <YN label="Hinweisschild vorhanden" field="hinweisschild_vorhanden" />
+          <YN label="Hinweisschild: max - min Kabinendruck vorhanden (300-100 Pascal)" field="hinweisschild_kabinendruck" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>5. Filteranlage montiert</h3>
+          <h3>5. Filteranlage ist montiert:</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <label><input type="checkbox" checked={data.montage_auf_dach} onChange={(e) => u('montage_auf_dach', e.target.checked)} /> auf dem Dach</label>
             <label><input type="checkbox" checked={data.montage_links_hinter_kabine} onChange={(e) => u('montage_links_hinter_kabine', e.target.checked)} /> links hinter der Kabine</label>
@@ -265,63 +273,70 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>6. Filterwechsel / Wartung</h3>
-          <YN label="Sicherer Standplatz vorhanden" field="sicherer_standplatz" />
-          <YN label="Zugangssysteme vorhanden" field="zugangssysteme_vorhanden" />
-          <YN label="ROPS/FOPS unbeschädigt" field="rops_fops_unbeschaedigt" />
-          <YN label="Rüttelfest montiert" field="ruettelfest_montiert" />
-          <YN label="Vorgesehene Anschlagpunkte genutzt" field="vorgesehene_anschlagpunkte_genutzt" />
+          <h3>6. Filterwechsel</h3>
+          <YN label="sicherer Standplatz zum Filterwechsel und Wartung der Filteranlage vorhanden (nach BGI 584)." field="sicherer_standplatz" />
+          <YN label="ausreichende Zugangssysteme, für Wartung und Filterwechsel, vorhanden." field="zugangssysteme_vorhanden" />
+          <YN label="Beeinträchtigung von ROPS/ FOPS und TOPS Schutzmaßnahmen durch Filteranlage." field="rops_fops_unbeschaedigt" />
+          <YN label="Konstruktion der Atemluftversorgungsanlage rüttelfest und vibrationsfrei montiert." field="ruettelfest_montiert" />
+          <YN label="Nutzung der vom Hersteller vorgesehenden Verschraubungen/ Anschlagpunkte." field="vorgesehene_anschlagpunkte_genutzt" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>7. Sicht / Bewegung</h3>
-          <YN label="Bewegungseinschränkung" field="bewegungseinschraenkung" />
-          <YN label="Sichtbeschränkung" field="sichtbeschraenkung" />
-          <YN label="Original Spiegel OK" field="original_spiegel_ok" />
-          <YN label="Ultraschall Warnsystem" field="ultraschall_warnsystem" />
-          <YN label="Einschränkung Richtlinien" field="einschraenkung_richtlinien" />
-          <YN label="Tür Öffnungen beeinträchtigt" field="tuer_oeffnungen_beeintraechtigt" />
+          <h3>7. Einschränkungen der Sicht und Bewegungsfreiheit</h3>
+          <YN label="Bewegungseinschränkung des Fahrers." field="bewegungseinschraenkung" />
+          <YN label="Sichtbeschränkung des Fahrers." field="sichtbeschraenkung" />
+          <YN label="Original Spiegel ausreichend." field="original_spiegel_ok" />
+          <YN label="Ultraschall - Warneinrichtung bzw. Videoüberwachung." field="ultraschall_warnsystem" />
+          <YN label="Einschränkung der Original - Wartungsrichtlinien." field="einschraenkung_richtlinien" />
+          <YN label="Zugänge und Öffnungen nach DIN ISO 2860 beeinträchtigt (Türen, Klappen, Öffnungen)." field="tuer_oeffnungen_beeintraechtigt" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>8. Überdrucksystem</h3>
-          <YN label="Kontrollanzeige vorhanden" field="kontrollanzeige_vorhanden" />
-          <YN label="Optische Warnung" field="optische_warnung" />
-          <YN label="Akustische Warnung" field="akustische_warnung" />
-          <YN label="Ansprechzeit OK" field="ansprechzeit_ok" />
-          <YN label="Alarm Untergrenze" field="alarm_untergrenze" />
-          <YN label="Alarm Obergrenze" field="alarm_obergrenze" />
+          <h3>8. Überdruck Überwachungssystem</h3>
+          <YN label="Kontrollanzeige für Überdruck in der Kabine vorhanden." field="kontrollanzeige_vorhanden" />
+          <YN label="optische Warneinrichtung für Druckabfall bzw. Anstieg vorhanden." field="optische_warnung" />
+          <YN label="akustische Warneinrichtung für Druckabfall bzw. Anstieg vorhanden." field="akustische_warnung" />
+          <YN label="Ansprechzeit der Warneinrichtung weniger als 5 Sekunden." field="ansprechzeit_ok" />
+          <YN label="Alarmeinstellung - unter Grenzwert 100 Pascal." field="alarm_untergrenze" />
+          <YN label="Alarmeinstellung - oberer Grenzwert 300 Pascal." field="alarm_obergrenze" />
+          <YN label="Kontrollanzeige Partikelfilter vorhanden." field="kontrollanzeige_partikelfilter" />
+          <YN label="Kontrollanzeige Aktivkohlefilter vorhanden." field="kontrollanzeige_aktivkohlefilter" />
+          <YN label="Betriebsstundenzähler vorhanden." field="betriebsstundenzaehler_vorhanden" />
+          <YN label='Betriebsanzeige "Grün" außen sichtbar montiert.' field="betriebsanzeige_gruen_sichtbar" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>9. Additional Filter / Monitoring</h3>
-          <YN label="Kontrollanzeige Aktivkohlefilter" field="kontrollanzeige_aktivkohlefilter" />
-          <YN label="Kontrollanzeige Partikelfilter" field="kontrollanzeige_partikelfilter" />
-          <YN label="Betriebsstundenzähler vorhanden" field="betriebsstundenzaehler_vorhanden" />
-          <YN label="Betriebsanzeige grün sichtbar" field="betriebsanzeige_gruen_sichtbar" />
-        </div>
-
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>10. Sicherheitsmaßnahmen Fahrerkabine</h3>
-          <YN label="Auto-Einschaltung Hauptmotor" field="auto_einschaltung_hauptmotor" />
-          <YN label="Hinweisschild Frischluft" field="hinweisschild_frischluft" />
-          <YN label="Fluchtfiltergerät vorhanden" field="fluchtfiltergeraet_vorhanden" />
-          <YN label="Funkverkehr vorhanden" field="funkverkehr_vorhanden" />
-          <YN label="Notausstieg blockiert" field="notausstieg_blockiert" />
-          <YN label="Notausstieg Nothammer" field="notausstieg_nothammer" />
-          <YN label="Lärmgrenzwert unter 85dB" field="laermgrenzwert_unter_85db" />
+          <h3>10. Sicherheitsmaßnahmen in der Fahrerkabine</h3>
+          <YN label="Filtersystem schaltet automatisch beim Start des Hauptmotors ein." field="auto_einschaltung_hauptmotor" />
+          <YN label='Hinweisschild vorhanden: "Bei geschlossener Kabine muss die Frischluftversorgung in Betrieb sein."' field="hinweisschild_frischluft" />
+          <YN label="Fluchtfiltergerät vorhanden." field="fluchtfiltergeraet_vorhanden" />
+          <YN label="Funkverkehr vorhanden." field="funkverkehr_vorhanden" />
+          <YN label="vorhandener Notausstieg blockiert (z.B. Fenster/Türen abgedichtet)." field="notausstieg_blockiert" />
+          <YN label="Notausstieg nachträglich gewährleistet durch Nothammer." field="notausstieg_nothammer" />
+          <YN label="Lärmgrenzwert von Klima- und Filteranlage unter 85dB am Fahrerrohr." field="laermgrenzwert_unter_85db" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>11. Kabinenabdichtung</h3>
-          <YN label="Kabine Abdichtung OK" field="kabine_abdichtung_ok" />
-          <YN label="Hebeschiebefenster blockiert" field="hebeschiebefenster_blockiert" />
-          <YN label="Außenluft Heizung abgedichtet" field="aussenluft_heizung_abgedichtet" />
-          <YN label="Durchführungen abgedichtet" field="durchfuehrungen_abgedichtet" />
+          <YN label="Abdichtung der Kabine ausreichend." field="kabine_abdichtung_ok" />
+          <YN label="Hebe - oder Schiebefenster Bedienteil entfernt/blockiert." field="hebeschiebefenster_blockiert" />
+          <YN label="Außenluftzufuhr für Heizung abgedichtet." field="aussenluft_heizung_abgedichtet" />
+          <YN label="Durchführung von Schläuchen, Kabeln usw. abgedichtet." field="durchfuehrungen_abgedichtet" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Überdruck bei laufendem Motor:</label>
+              <input type="text" value={data.ueberdruck_laufend} onChange={(e) => u('ueberdruck_laufend', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Luftzufuhr bei laufendem Motor:</label>
+              <input type="text" value={data.luftzufuhr_laufend} onChange={(e) => u('luftzufuhr_laufend', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+            </div>
+          </div>
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>12. Klimaanlage</h3>
+          <YN label="Klimaanlage vorhanden/ ausreichend:" field="klima_vorhanden" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Typ/Hersteller</label>
@@ -349,26 +364,21 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>13. Heizung</h3>
+          <YN label="Heizung vorhanden/ ausreichend:" field="heizung_vorhanden" />
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Typ/Hersteller</label>
             <input type="text" value={data.heizung_typ_hersteller} onChange={(e) => u('heizung_typ_hersteller', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', marginBottom: '15px' }} />
           </div>
-          <YN label="Umluftbetrieb" field="heizung_umluftbetrieb" />
+          <YN label="Heizung im Umluftbetrieb:" field="heizung_umluftbetrieb" />
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>14. Luftzufuhr / Kälteanlage</h3>
-          <YN label="Luftzufuhr vorhanden" field="luftzufuhr_vorhanden" />
-          <YN label="Kälteanlage vorhanden" field="kaelteanlage_vorhanden" />
-        </div>
-
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3>15. Abschluss / Kontrolle</h3>
+          <h3>15. Mängel/Bemerkungen</h3>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Mängel/Bemerkungen</label>
             <textarea value={data.maengel_bemerkungen} onChange={(e) => u('maengel_bemerkungen', e.target.value)} rows={4} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', marginBottom: '15px' }} />
           </div>
-          <YN label="Nachkontrolle erforderlich" field="nachkontrolle_erforderlich" />
+          <YN label="Nachkontrolle, nach Mängelabstellung, erforderlich:" field="nachkontrolle_erforderlich" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Ort *</label>
@@ -379,12 +389,12 @@ const PruefprotokollForm: React.FC<Props> = ({ serviceAnfrageId }) => {
               <input type="date" value={data.protokoll_datum} onChange={(e) => u('protokoll_datum', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Auftraggeber Unterschrift</label>
-              <input type="text" value={data.auftraggeber_unterschrift} onChange={(e) => u('auftraggeber_unterschrift', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Auftraggeber bzw. Betreiber</label>
+              <input type="text" value={data.auftraggeber_betreiber} onChange={(e) => u('auftraggeber_betreiber', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Servicetechniker Unterschrift *</label>
-              <input type="text" value={data.servicetechniker_unterschrift} onChange={(e) => u('servicetechniker_unterschrift', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Servicetechniker *</label>
+              <input type="text" value={data.servicetechniker} onChange={(e) => u('servicetechniker', e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }} />
             </div>
           </div>
         </div>

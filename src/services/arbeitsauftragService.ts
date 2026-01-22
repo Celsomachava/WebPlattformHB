@@ -4,6 +4,49 @@ import { authService } from './simple-auth';
 class ArbeitsauftragService {
   private baseUrl = '/api/arbeitsauftrag';
 
+  async getAll(): Promise<ArbeitsauftragServicebericht[]> {
+    try {
+      const response = await fetch(this.baseUrl, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_arbeitsauftrag') || '[]');
+      return pending;
+    }
+  }
+
+  async get(id: string): Promise<ArbeitsauftragServicebericht | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_arbeitsauftrag') || '[]');
+      return pending.find((p: ArbeitsauftragServicebericht) => p.id === id) || null;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await fetch(`${this.baseUrl}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_arbeitsauftrag') || '[]');
+      const filtered = pending.filter((p: ArbeitsauftragServicebericht) => p.id !== id);
+      localStorage.setItem('pending_arbeitsauftrag', JSON.stringify(filtered));
+    }
+  }
+
   async getByServiceRequest(serviceAnfrageId: string): Promise<ArbeitsauftragServicebericht | null> {
     try {
       const response = await fetch(`${this.baseUrl}/${serviceAnfrageId}`, {

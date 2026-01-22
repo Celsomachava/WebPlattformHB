@@ -4,6 +4,49 @@ import { authService } from './simple-auth';
 class GefaehrdungsbeurteilungService {
   private baseUrl = '/api/gefaehrdungsbeurteilung';
 
+  async getAll(): Promise<GefaehrdungsbeurteilungAussendienst[]> {
+    try {
+      const response = await fetch(this.baseUrl, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_gefaehrdungsbeurteilung') || '[]');
+      return pending;
+    }
+  }
+
+  async get(id: string): Promise<GefaehrdungsbeurteilungAussendienst | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_gefaehrdungsbeurteilung') || '[]');
+      return pending.find((p: GefaehrdungsbeurteilungAussendienst) => p.id === id) || null;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await fetch(`${this.baseUrl}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+    } catch (error) {
+      const pending = JSON.parse(localStorage.getItem('pending_gefaehrdungsbeurteilung') || '[]');
+      const filtered = pending.filter((p: GefaehrdungsbeurteilungAussendienst) => p.id !== id);
+      localStorage.setItem('pending_gefaehrdungsbeurteilung', JSON.stringify(filtered));
+    }
+  }
+
   async getByServiceRequest(serviceAnfrageId: string): Promise<GefaehrdungsbeurteilungAussendienst | null> {
     try {
       const response = await fetch(`${this.baseUrl}/${serviceAnfrageId}`, {

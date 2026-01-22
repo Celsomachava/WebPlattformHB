@@ -105,13 +105,26 @@ export const ArbeitsauftragPDF: React.FC<Props> = ({ data }) => (
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>5. Material</Text>
-        <Text style={{ fontSize: 7 }}>
-          {data.material_grobstaubfilter && 'Grobstaubfilter S8.2G | '}
-          {data.material_schwebstofffilter && 'Schwebstofffilter S8.3S | '}
-          {data.material_aktivkohlefilter && 'Aktivkohlefilter S8.4C-AB | '}
-          {data.material_umluftfilter && 'Umluftfilter UA31-1S | '}
-          {data.material_sonstiges}
-        </Text>
+        <View style={{ flexDirection: 'row', marginBottom: 2 }}>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile1_col1}</Text>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile1_col2}</Text>
+          <Text style={{ width: '34%', fontSize: 7 }}>{data.material_zeile1_col3}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', marginBottom: 2 }}>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile2_col1}</Text>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile2_col2}</Text>
+          <Text style={{ width: '34%', fontSize: 7 }}>{data.material_zeile2_col3}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', marginBottom: 2 }}>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile3_col1}</Text>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile3_col2}</Text>
+          <Text style={{ width: '34%', fontSize: 7 }}>{data.material_zeile3_col3}</Text>
+        </View>
+        <View style={{ flexDirection: 'row' }}>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile4_col1}</Text>
+          <Text style={{ width: '33%', fontSize: 7 }}>{data.material_zeile4_col2}</Text>
+          <Text style={{ width: '34%', fontSize: 7 }}>{data.material_zeile4_col3}</Text>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -119,21 +132,26 @@ export const ArbeitsauftragPDF: React.FC<Props> = ({ data }) => (
         <Text style={{ fontSize: 7 }}>{data.bemerkungen}</Text>
       </View>
 
+      <View style={{ marginBottom: 8, padding: 5, fontSize: 6, lineHeight: 1.4 }}>
+        <Text>Reklamationen nur innerhalb von 8 Tagen nach unserer erbrachten Leistung. Für alle Maschinen, Ersatzteile und Waren gelten die Garantiebestimmungen des Herstellers. Die gelieferte Ware bleibt bis zur vollständigen Bezahlung unser Eigentum.</Text>
+        <Text style={{ marginTop: 4 }}>Mit dieser Unterschrift wird bestätigt, dass die Arbeiten ordnungsgemäß durchgeführt wurden, die oben genannte Reise- und Arbeitszeit, sowie km angefallen sind und auf dem Materialschein aufgeführten Ersatzteile benötigt wurden.</Text>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>7. Unterschriften</Text>
         <View style={styles.row}>
-          <Text style={styles.label}>Monteur:</Text>
+          <Text style={styles.label}>Unterschrift/ Monteur:</Text>
           <Text style={styles.value}>{data.unterschrift_monteur}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Kunde:</Text>
+          <Text style={styles.label}>Stempel/ Unterschrift Kunde bzw. Bevollmächtigte/ Druckbuchstaben:</Text>
           <Text style={styles.value}>{data.unterschrift_kunde}</Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Text>Es gelten unsere allgemeinen Geschäftsbedingungen (AGB)</Text>
-        <Text>Heduschka GmbH • Buchwälder Str. 28 • 01968 Senftenberg • Tel. 03573 79 32 • info@heduschka.de</Text>
+        <Text>&gt;&gt; Es gelten unsere allgemeinen Geschäftsbedingungen (AGB), die sie umseitig und unter www.heduschka.de finden &lt;&lt;</Text>
+        <Text>Heduschka GmbH . Buchwalder Str. 28 . 01968 Senftenberg . Tel. 03573/ 79 32 25 . Fax 03573 30 66 . www.heduschka.de</Text>
       </View>
     </Page>
   </Document>

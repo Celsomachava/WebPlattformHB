@@ -3,16 +3,13 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { PruefprotokollDGUV201004 } from '../../../types/pruefprotokoll';
 
 const styles = StyleSheet.create({
-  page: { padding: 10, fontSize: 7 },
-  title: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
-  section: { marginBottom: 8 },
-  sectionTitle: { fontSize: 9, fontWeight: 'bold', marginBottom: 4 },
-  row: { flexDirection: 'row', marginBottom: 3 },
-  label: { width: '40%', fontWeight: 'bold' },
-  value: { width: '60%' },
-  table: { borderWidth: 1, borderColor: '#000', marginBottom: 5 },
-  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000' },
-  tableCell: { padding: 2, borderRightWidth: 1, borderColor: '#000', fontSize: 6 }
+  page: { padding: 10, fontSize: 6 },
+  title: { fontSize: 10, fontWeight: 'bold', marginBottom: 6, textAlign: 'center' },
+  section: { marginBottom: 6, borderWidth: 1, borderColor: '#000', padding: 4 },
+  sectionTitle: { fontSize: 8, fontWeight: 'bold', marginBottom: 3 },
+  row: { flexDirection: 'row', marginBottom: 2 },
+  label: { width: '50%', fontSize: 6 },
+  value: { width: '50%', fontSize: 6 }
 });
 
 interface Props {
@@ -22,87 +19,100 @@ interface Props {
 export const PruefprotokollPDF: React.FC<Props> = ({ data }) => (
   <Document>
     <Page size="A4" style={styles.page}>
-      <Text style={styles.title}>Prüfprotokoll DGUV 201-004</Text>
+      <Text style={styles.title}>Prüf-/ Übernahmeprotokoll für Atemluftversorgungs-/ Klimaanlagen</Text>
+      <Text style={{ fontSize: 7, textAlign: 'center', marginBottom: 6 }}>nach Merkblatt DGUV 201-004</Text>
       
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Kalenderjahr: {data.kalenderjahr}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>1. Auftraggeber / Betreiber</Text>
         <View style={styles.row}>
-          <Text style={styles.label}>Auftraggeber:</Text>
-          <Text style={styles.value}>{data.auftraggeber_name}, {data.auftraggeber_strasse}, {data.auftraggeber_ort}</Text>
+          <View style={{ width: '50%' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 6 }}>Auftraggeber</Text>
+            <Text style={{ fontSize: 6 }}>{data.auftraggeber_name}</Text>
+            <Text style={{ fontSize: 6 }}>{data.auftraggeber_strasse}</Text>
+            <Text style={{ fontSize: 6 }}>{data.auftraggeber_ort}</Text>
+          </View>
+          <View style={{ width: '50%' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 6 }}>Betreiber</Text>
+            <Text style={{ fontSize: 6 }}>{data.betreiber_name}</Text>
+            <Text style={{ fontSize: 6 }}>{data.betreiber_strasse}</Text>
+            <Text style={{ fontSize: 6 }}>{data.betreiber_ort}</Text>
+          </View>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Betreiber:</Text>
-          <Text style={styles.value}>{data.betreiber_name}, {data.betreiber_strasse}, {data.betreiber_ort}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Projekt / Kostenstelle:</Text>
-          <Text style={styles.value}>{data.projekt} / {data.kostenstelle}</Text>
+          <Text style={styles.label}>Projekt: {data.projekt}</Text>
+          <Text style={styles.value}>Kostenstelle: {data.kostenstelle}</Text>
         </View>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>2. Gerät / Fahrzeug</Text>
         <View style={styles.row}>
-          <Text style={styles.label}>Fahrzeug/Gerät:</Text>
-          <Text style={styles.value}>{data.fahrzeug_geraet}</Text>
+          <Text style={styles.label}>Fahrzeug/Gerät: {data.fahrzeug_geraet}</Text>
+          <Text style={styles.value}>Hersteller/Typ: {data.hersteller_typ}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Hersteller/Typ:</Text>
-          <Text style={styles.value}>{data.hersteller_typ}</Text>
+          <Text style={styles.label}>Fahrgestell-Nr.: {data.fahrgestell_nr}</Text>
+          <Text style={styles.value}>BS/km-Stand: {data.bs_km_stand}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Fahrgestell-Nr. / Baujahr:</Text>
-          <Text style={styles.value}>{data.fahrgestell_nr} / {data.baujahr}</Text>
+          <Text style={styles.label}>Baujahr: {data.baujahr}</Text>
+          <Text style={styles.value}>E-Anlage: {data.e_anlage}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Motor: {data.motor}</Text>
+          <Text style={styles.value}>Hersteller/Typ: {data.motor_hersteller_typ}</Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>3. Motor / Filteranlagen</Text>
+        <Text style={styles.sectionTitle}>3. Atemluft - Filteranlage</Text>
         <View style={styles.row}>
-          <Text style={styles.label}>Motor:</Text>
-          <Text style={styles.value}>{data.motor_hersteller_typ}</Text>
+          <Text style={styles.label}>Hersteller/Typ: {data.atemluft_hersteller_typ}</Text>
+          <Text style={styles.value}>Serien-Nr.: {data.atemluft_seriennr}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Filter:</Text>
-          <Text style={styles.value}>{data.filter_hersteller_typ} (SN: {data.filter_seriennr})</Text>
+          <Text style={styles.label}>Baujahr: {data.atemluft_baujahr}</Text>
+          <Text style={styles.value}>Gewicht: {data.atemluft_gewicht}</Text>
         </View>
+        <Text style={{ fontSize: 6, marginTop: 2 }}>Überdruck - Überwachungssystem Typ: {data.ueberdruck_ueberwachung_typ} | Serien-Nr.: {data.ueberdruck_ueberwachung_seriennr}</Text>
+        <Text style={{ fontSize: 6, marginTop: 2 }}>Umluft - Filteranlage Typ: {data.umluft_filteranlage_typ} | Serien-Nr.: {data.umluft_filteranlage_seriennr}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>4. Dokumentation</Text>
-        <Text>Betriebsanleitung: {data.betriebsanleitung_vorhanden}</Text>
-        <Text>Filterkarte: {data.filterkarte_vorhanden}</Text>
-        <Text>Hinweisschild: {data.hinweisschild_vorhanden}</Text>
+        <Text style={{ fontSize: 6 }}>Betriebsanleitung/Filteranlage vorhanden: {data.betriebsanleitung_vorhanden}</Text>
+        <Text style={{ fontSize: 6 }}>Filterkarte vorhanden: {data.filterkarte_vorhanden}</Text>
+        <Text style={{ fontSize: 6 }}>Hinweisschild: max - min Kabinendruck vorhanden (300-100 Pascal): {data.hinweisschild_kabinendruck}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>5. Filteranlage montiert</Text>
-        <Text>
-          {data.montage_auf_dach && 'Auf Dach | '}
-          {data.montage_links_hinter_kabine && 'Links hinter Kabine | '}
-          {data.montage_rechts_neben_kabine && 'Rechts neben Kabine | '}
-          {data.montage_direkt_hinter_kabine && 'Direkt hinter Kabine'}
+        <Text style={styles.sectionTitle}>5. Filteranlage ist montiert:</Text>
+        <Text style={{ fontSize: 6 }}>
+          {data.montage_auf_dach && 'auf dem Dach | '}
+          {data.montage_links_hinter_kabine && 'links hinter der Kabine | '}
+          {data.montage_rechts_neben_kabine && 'rechts neben der Kabine | '}
+          {data.montage_direkt_hinter_kabine && 'direkt hinter der Kabine'}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>6-14. Prüfpunkte</Text>
-        <Text>Sicherer Standplatz: {data.sicherer_standplatz}</Text>
-        <Text>ROPS/FOPS unbeschädigt: {data.rops_fops_unbeschaedigt}</Text>
-        <Text>Kontrollanzeige vorhanden: {data.kontrollanzeige_vorhanden}</Text>
-        <Text>Kabine Abdichtung OK: {data.kabine_abdichtung_ok}</Text>
+        <Text style={styles.sectionTitle}>6-13. Prüfpunkte</Text>
+        <Text style={{ fontSize: 5 }}>Filterwechsel | Sicht/Bewegung | Überdruck | Monitoring | Sicherheit | Abdichtung | Klima | Heizung</Text>
+        <Text style={{ fontSize: 6, marginTop: 2 }}>Überdruck bei laufendem Motor: {data.ueberdruck_laufend}</Text>
+        <Text style={{ fontSize: 6 }}>Luftzufuhr bei laufendem Motor: {data.luftzufuhr_laufend}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>15. Abschluss</Text>
-        <Text>Mängel/Bemerkungen: {data.maengel_bemerkungen}</Text>
-        <Text>Nachkontrolle erforderlich: {data.nachkontrolle_erforderlich}</Text>
-        <Text>Ort: {data.ort} | Datum: {data.protokoll_datum}</Text>
-        <Text>Auftraggeber: {data.auftraggeber_unterschrift} | Servicetechniker: {data.servicetechniker_unterschrift}</Text>
+        <Text style={styles.sectionTitle}>15. Mängel/Bemerkungen</Text>
+        <Text style={{ fontSize: 6 }}>{data.maengel_bemerkungen}</Text>
+        <Text style={{ fontSize: 6, marginTop: 2 }}>Nachkontrolle, nach Mängelabstellung, erforderlich: {data.nachkontrolle_erforderlich}</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Ort: {data.ort}</Text>
+          <Text style={styles.value}>Datum: {data.protokoll_datum}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Auftraggeber bzw. Betreiber: {data.auftraggeber_betreiber}</Text>
+          <Text style={styles.value}>Servicetechniker: {data.servicetechniker}</Text>
+        </View>
       </View>
     </Page>
   </Document>
