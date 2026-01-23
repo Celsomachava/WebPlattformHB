@@ -7,9 +7,10 @@ import { WochenplanPDF } from './pdf/WochenplanPDF';
 
 interface WochenplanModuleProps {
   serviceAnfrageId: string;
+  onBack?: () => void;
 }
 
-const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId }) => {
+const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId, onBack }) => {
   const [plan, setPlan] = useState<Wochenplan | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,15 +40,13 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
 
   const loadWochenplan = async () => {
     try {
-      const data = await wochenplanService.getByServiceRequest(serviceAnfrageId);
-      if (data) {
-        setPlan(data);
-      } else {
+      if (serviceAnfrageId === 'new') {
         setPlan({
           id: crypto.randomUUID(),
-          service_anfrage_id: serviceAnfrageId,
+          service_anfrage_id: 'new',
           kalenderwoche: getCurrentWeek(),
           servicetechniker: '',
+          techniker_name: '',
           rows: [],
           information: '',
           geld_mitgeben: 0,
@@ -61,6 +60,31 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
           created_at: Date.now(),
           updated_at: Date.now()
         });
+      } else {
+        const data = await wochenplanService.get(serviceAnfrageId);
+        if (data) {
+          setPlan(data);
+        } else {
+          setPlan({
+            id: crypto.randomUUID(),
+            service_anfrage_id: serviceAnfrageId,
+            kalenderwoche: getCurrentWeek(),
+            servicetechniker: '',
+            techniker_name: '',
+            rows: [],
+            information: '',
+            geld_mitgeben: 0,
+            km_ca: 0,
+            tanken: 0,
+            puffer: 0,
+            hotel_kosten: 0,
+            unterschrift_monteur: '',
+            unterschrift_service: '',
+            zurueck_datum: '',
+            created_at: Date.now(),
+            updated_at: Date.now()
+          });
+        }
       }
     } catch (error) {
       setErrors(['Fehler beim Laden des Wochenplans']);
@@ -122,13 +146,15 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
     }
 
     try {
-      if (plan.created_at === plan.updated_at) {
-        await wochenplanService.create(plan);
-      } else {
+      const existing = await wochenplanService.get(plan.id);
+      if (existing) {
         await wochenplanService.update(plan.id, plan);
+      } else {
+        await wochenplanService.create(plan);
       }
       setErrors([]);
       alert('Wochenplan erfolgreich gespeichert!');
+      if (onBack) onBack();
     } catch (error) {
       setErrors(['Fehler beim Speichern']);
     }
@@ -158,6 +184,7 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId })
       <div className="no-print" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Wochenplan</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
+          {onBack && <button onClick={onBack} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>← Zurück</button>}
           <button onClick={handleSave} style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
             Speichern
           </button>

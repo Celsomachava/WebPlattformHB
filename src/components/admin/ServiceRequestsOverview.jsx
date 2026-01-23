@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import ServiceRequestForm from '../customer/form/ServiceRequestForm';
 
 const ServiceRequestsOverview = ({ user }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     loadRequests();
   }, []);
+
+  const getCustomerDataSync = (kundenId) => {
+    const cached = localStorage.getItem('admin_clients');
+    if (cached) {
+      const clients = JSON.parse(cached);
+      const client = clients.find(c => c.kundennummer === kundenId);
+      if (client) return client;
+    }
+    return {};
+  };
 
   const loadRequests = async () => {
     try {
@@ -18,8 +30,12 @@ const ServiceRequestsOverview = ({ user }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setRequests(data);
-        localStorage.setItem('admin_service_requests', JSON.stringify(data));
+        const enriched = data.map(req => ({
+          ...req,
+          ...getCustomerDataSync(req.kunden_id)
+        }));
+        setRequests(enriched);
+        localStorage.setItem('admin_service_requests', JSON.stringify(enriched));
       }
     } catch (error) {
       const cached = localStorage.getItem('admin_service_requests');
@@ -27,7 +43,11 @@ const ServiceRequestsOverview = ({ user }) => {
       
       const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
       if (pending.length > 0) {
-        setRequests(prev => [...prev, ...pending]);
+        const enriched = pending.map(req => ({
+          ...req,
+          ...getCustomerDataSync(req.kunden_id)
+        }));
+        setRequests(prev => [...prev, ...enriched]);
       }
     } finally {
       setLoading(false);
@@ -46,11 +66,29 @@ const ServiceRequestsOverview = ({ user }) => {
       });
 
       if (response.ok) {
-        loadRequests();
+        const updatedRequests = requests.map(r => 
+          r.id === requestId ? { ...r, status: newStatus } : r
+        );
+        setRequests(updatedRequests);
+        setSelectedRequest(prev => prev ? { ...prev, status: newStatus } : null);
+        localStorage.setItem('admin_service_requests', JSON.stringify(updatedRequests));
         alert(`Status wurde auf "${newStatus}" geändert.`);
       }
     } catch (error) {
-      alert('Fehler beim Aktualisieren des Status');
+      const updatedRequests = requests.map(r => 
+        r.id === requestId ? { ...r, status: newStatus } : r
+      );
+      setRequests(updatedRequests);
+      setSelectedRequest(prev => prev ? { ...prev, status: newStatus } : null);
+      localStorage.setItem('admin_service_requests', JSON.stringify(updatedRequests));
+      
+      const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
+      const updatedPending = pending.map(r => 
+        r.id === requestId ? { ...r, status: newStatus } : r
+      );
+      localStorage.setItem('pending_service_requests', JSON.stringify(updatedPending));
+      
+      alert(`Status wurde offline auf "${newStatus}" geändert.`);
     }
   };
 
@@ -83,6 +121,28 @@ const ServiceRequestsOverview = ({ user }) => {
     return (
       <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
         <p>Lade Serviceanfragen...</p>
+      </div>
+    );
+  }
+
+  if (showCreateForm) {
+    return (
+      <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
+        <button
+          onClick={() => setShowCreateForm(false)}
+          style={{
+            padding: '8px 16px',
+            marginBottom: '20px',
+            border: '1px solid #6c757d',
+            backgroundColor: 'transparent',
+            color: '#6c757d',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          ← Zurück zur Übersicht
+        </button>
+        <ServiceRequestForm user={user} />
       </div>
     );
   }
@@ -151,16 +211,22 @@ const ServiceRequestsOverview = ({ user }) => {
 
             <div>
               <h3 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>Status ändern</h3>
-              <select
-                value={selectedRequest.status || 'neu'}
-                onChange={(e) => updateStatus(selectedRequest.id, e.target.value)}
-                style={{ padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', width: '300px' }}
-              >
-                <option value="neu">Neu</option>
-                <option value="bearbeitet">Bearbeitet</option>
-                <option value="abgeschlossen">Abgeschlossen</option>
-                <option value="storniert">Storniert</option>
-              </select>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select
+                  value={selectedRequest.status || 'neu'}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    updateStatus(selectedRequest.id, newStatus);
+                  }}
+                  style={{ padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', flex: 1, maxWidth: '300px' }}
+                >
+                  <option value="neu">Neu</option>
+                  <option value="bearbeitet">Bearbeitet</option>
+                  <option value="abgeschlossen">Abgeschlossen</option>
+                  <option value="storniert">Storniert</option>
+                </select>
+                <span style={{ fontSize: '14px', color: '#28a745' }}>✓ Status wird automatisch aktualisiert</span>
+              </div>
             </div>
 
             <div style={{ fontSize: '12px', color: '#6c757d' }}>
@@ -179,45 +245,62 @@ const ServiceRequestsOverview = ({ user }) => {
         <p style={{ color: '#6c757d', margin: 0 }}>Alle Serviceanfragen von Kunden</p>
       </div>
 
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => setFilterStatus('all')}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #007bff',
+              backgroundColor: filterStatus === 'all' ? '#007bff' : 'transparent',
+              color: filterStatus === 'all' ? 'white' : '#007bff',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Alle ({requests.length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('neu')}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #007bff',
+              backgroundColor: filterStatus === 'neu' ? '#007bff' : 'transparent',
+              color: filterStatus === 'neu' ? 'white' : '#007bff',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Neu ({requests.filter(r => r.status === 'neu').length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('bearbeitet')}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #ffc107',
+              backgroundColor: filterStatus === 'bearbeitet' ? '#ffc107' : 'transparent',
+              color: filterStatus === 'bearbeitet' ? 'white' : '#ffc107',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Bearbeitet ({requests.filter(r => r.status === 'bearbeitet').length})
+          </button>
+        </div>
+        
         <button
-          onClick={() => setFilterStatus('all')}
+          onClick={() => setShowCreateForm(true)}
           style={{
-            padding: '8px 16px',
-            border: '1px solid #007bff',
-            backgroundColor: filterStatus === 'all' ? '#007bff' : 'transparent',
-            color: filterStatus === 'all' ? 'white' : '#007bff',
+            padding: '10px 20px',
+            border: 'none',
+            backgroundColor: '#28a745',
+            color: 'white',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontWeight: '500'
           }}
         >
-          Alle ({requests.length})
-        </button>
-        <button
-          onClick={() => setFilterStatus('neu')}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #007bff',
-            backgroundColor: filterStatus === 'neu' ? '#007bff' : 'transparent',
-            color: filterStatus === 'neu' ? 'white' : '#007bff',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Neu ({requests.filter(r => r.status === 'neu').length})
-        </button>
-        <button
-          onClick={() => setFilterStatus('bearbeitet')}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #ffc107',
-            backgroundColor: filterStatus === 'bearbeitet' ? '#ffc107' : 'transparent',
-            color: filterStatus === 'bearbeitet' ? 'white' : '#ffc107',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Bearbeitet ({requests.filter(r => r.status === 'bearbeitet').length})
+          + Neue Serviceanfrage erstellen
         </button>
       </div>
 
@@ -277,7 +360,7 @@ const ServiceRequestsOverview = ({ user }) => {
                         fontSize: '12px'
                       }}
                     >
-                      Details
+                      Details anzeigen
                     </button>
                   </td>
                 </tr>

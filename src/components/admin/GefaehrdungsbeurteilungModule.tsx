@@ -269,7 +269,7 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId, onBa
               <tr>
                 <td style={{ padding: '8px', border: '1px solid #dee2e6' }}>Mechanische Gefährdung</td>
                 <td style={{ padding: '8px', border: '1px solid #dee2e6', textAlign: 'center' }}><input type="checkbox" checked={data.mechanische_gefaehrdung} onChange={(e) => u('mechanische_gefaehrdung', e.target.checked)} disabled={isReadOnly} /></td>
-                <td style={{ padding: '8px', border: '1px solid #dee2e6', textAlign: 'center' }}><input type="checkbox" checked={!data.mechanische_gefaehrdung} onChange={(e) => u('mechanische_gefaehrdung', !e.target.checked)} disabled={isReadOnly} /></td>
+                <td style={{ padding: '8px', border: '1px solid #dee2e6', textAlign: 'center' }}><input type="checkbox" checked={data.mechanische_gefaehrdung === false} onChange={(e) => u('mechanische_gefaehrdung', !e.target.checked)} disabled={isReadOnly} /></td>
                 <td style={{ padding: '8px', border: '1px solid #dee2e6' }}><input type="text" value={data.mechanische_gefaehrdung_bem} onChange={(e) => u('mechanische_gefaehrdung_bem', e.target.value)} disabled={isReadOnly} style={{ width: '100%', padding: '4px', border: 'none' }} /></td>
               </tr>
               <tr>

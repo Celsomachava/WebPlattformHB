@@ -69,7 +69,7 @@ export function FormListManager<T>({
   };
 
   if (view === 'form') {
-    return <>{renderForm(selectedId, handleBack)}</>;
+    return <>{renderForm(selectedId || 'new', handleBack)}</>;
   }
 
   return (

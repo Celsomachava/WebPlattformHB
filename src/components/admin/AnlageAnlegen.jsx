@@ -11,6 +11,9 @@ const AnlageAnlegen = ({ user }) => {
   });
   const [clients, setClients] = useState([]);
   const [anlagen, setAnlagen] = useState([]);
+  const [filteredAnlagen, setFilteredAnlagen] = useState([]);
+  const [assetSearchTerm, setAssetSearchTerm] = useState('');
+  const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [editingAnlage, setEditingAnlage] = useState(null);
@@ -19,11 +22,12 @@ const AnlageAnlegen = ({ user }) => {
   useEffect(() => {
     if (isCustomer) {
       setAnlageForm(prev => ({ ...prev, kunden_id: user?.customer_id || user?.kunden_id }));
+      loadAnlagen();
     } else {
       loadClients();
+      loadAnlagen();
     }
     generateAnlagenId();
-    loadAnlagen();
   }, []);
 
   const loadClients = async () => {
@@ -57,6 +61,7 @@ const AnlageAnlegen = ({ user }) => {
           ? data.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
           : data;
         setAnlagen(filtered);
+        setFilteredAnlagen(filtered);
         localStorage.setItem('customer_installations', JSON.stringify(data));
       }
     } catch (error) {
@@ -71,13 +76,26 @@ const AnlageAnlegen = ({ user }) => {
         ? allAnlagen.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
         : allAnlagen;
       setAnlagen(filtered);
+      setFilteredAnlagen(filtered);
     }
   };
 
   const generateAnlagenId = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    const anlagenId = `ANL-${timestamp}-${random}`;
+    const allAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
+    const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
+    const combined = [...allAnlagen, ...pending];
+    
+    const maxId = combined.reduce((max, anlage) => {
+      const match = anlage.anlagen_id?.match(/^ANL-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1]);
+        return num > max ? num : max;
+      }
+      return max;
+    }, -1);
+    
+    const nextId = maxId + 1;
+    const anlagenId = `ANL-${nextId}`;
     setAnlageForm(prev => ({ ...prev, anlagen_id: anlagenId }));
   };
 
@@ -199,6 +217,29 @@ const AnlageAnlegen = ({ user }) => {
     generateAnlagenId();
   };
 
+  const filterAssets = () => {
+    let filtered = anlagen;
+    
+    if (selectedCustomerFilter) {
+      filtered = filtered.filter(a => a.kunden_id === selectedCustomerFilter);
+    }
+    
+    if (assetSearchTerm) {
+      filtered = filtered.filter(a => 
+        a.anlagen_id?.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
+        a.standort?.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
+        a.filtertyp?.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
+        a.qr_code_id?.toLowerCase().includes(assetSearchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredAnlagen(filtered);
+  };
+
+  useEffect(() => {
+    filterAssets();
+  }, [selectedCustomerFilter, assetSearchTerm, anlagen]);
+
   const editAnlage = (anlage) => {
     setEditingAnlage(anlage);
     setAnlageForm({ ...anlage });
@@ -300,6 +341,28 @@ const AnlageAnlegen = ({ user }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {isCustomer && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Kunde
+                  </label>
+                  <input
+                    type="text"
+                    value={anlageForm.kunden_id}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #ced4da',
+                      borderRadius: '4px',
+                      fontSize: '16px',
+                      backgroundColor: '#e9ecef',
+                      cursor: 'not-allowed'
+                    }}
+                  />
                 </div>
               )}
 
@@ -448,6 +511,58 @@ const AnlageAnlegen = ({ user }) => {
           <p style={{ color: '#6c757d', margin: 0, fontSize: '14px' }}>Übersicht aller angelegten Anlagen</p>
         </div>
 
+        {/* Asset Filter Section */}
+        {!isCustomer && (
+          <div style={{ marginBottom: '20px', display: 'grid', gap: '10px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>
+                Nach Kunde filtern
+              </label>
+              <select
+                value={selectedCustomerFilter}
+                onChange={(e) => setSelectedCustomerFilter(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Alle Kunden anzeigen</option>
+                {clients.map(client => (
+                  <option key={client.id || client.kundennummer} value={client.kundennummer}>
+                    {client.kundennummer} - {client.firmenname}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>
+                Anlagen durchsuchen
+              </label>
+              <input
+                type="text"
+                placeholder="Suche nach Anlagen-ID, Standort, Filtertyp oder QR-Code..."
+                value={assetSearchTerm}
+                onChange={(e) => setAssetSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            {(selectedCustomerFilter || assetSearchTerm) && (
+              <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                {filteredAnlagen.length} von {anlagen.length} Anlagen angezeigt
+              </div>
+            )}
+          </div>
+        )}
+
         <div style={{
           backgroundColor: 'white',
           borderRadius: '8px',
@@ -455,12 +570,12 @@ const AnlageAnlegen = ({ user }) => {
           maxHeight: '600px',
           overflowY: 'auto'
         }}>
-          {anlagen.length === 0 ? (
+          {filteredAnlagen.length === 0 ? (
             <div style={{ padding: '30px', textAlign: 'center', color: '#6c757d' }}>
-              Noch keine Anlagen vorhanden
+              {anlagen.length === 0 ? 'Noch keine Anlagen vorhanden' : 'Keine Anlagen gefunden'}
             </div>
           ) : (
-            anlagen.map(anlage => (
+            filteredAnlagen.map(anlage => (
               <div key={anlage.id} style={{
                 padding: '20px',
                 borderBottom: '1px solid #dee2e6'

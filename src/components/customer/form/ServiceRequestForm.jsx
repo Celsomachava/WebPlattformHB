@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '../../../services/simple-auth';
 
-const ServiceRequestForm = ({ user }) => {
+const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   const [formData, setFormData] = useState({
-    kunden_id: '',
-    anlagen_id: '',
-    standort: '',
-    filtertyp: '',
-    qr_code: '',
+    kunden_id: user?.customer_id || user?.kunden_id || '',
+    anlagen_id: preSelectedAsset?.id || '',
+    standort: preSelectedAsset?.standort || '',
+    filtertyp: preSelectedAsset?.filtertyp || '',
+    qr_code: preSelectedAsset?.qr_code_id || '',
     serviceart: '',
     dringlichkeit: 'normal',
     wunschtermin: '',
@@ -19,7 +19,7 @@ const ServiceRequestForm = ({ user }) => {
   const [clients, setClients] = useState([]);
   const [installations, setInstallations] = useState([]);
   const [filteredInstallations, setFilteredInstallations] = useState([]);
-  const [selectedAnlage, setSelectedAnlage] = useState(null);
+  const [selectedAnlage, setSelectedAnlage] = useState(preSelectedAsset || null);
   const [qrError, setQrError] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -27,8 +27,16 @@ const ServiceRequestForm = ({ user }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
+  const isCustomer = user?.role === 'KUNDE_XXX';
+
   useEffect(() => {
-    loadClients();
+    if (isCustomer) {
+      const kundenId = user?.customer_id || user?.kunden_id;
+      setFormData(prev => ({ ...prev, kunden_id: kundenId }));
+      loadCustomerData(kundenId);
+    } else {
+      loadClients();
+    }
     loadInstallations();
     loadDraft();
     
@@ -90,9 +98,18 @@ const ServiceRequestForm = ({ user }) => {
       const client = clients.find(c => c.kundennummer === kundenId);
       if (client) {
         setCustomerData(client);
-        const filtered = installations.filter(inst => inst.kunden_id === kundenId);
-        setFilteredInstallations(filtered);
+      } else {
+        const cached = localStorage.getItem('admin_clients');
+        if (cached) {
+          const allClients = JSON.parse(cached);
+          const foundClient = allClients.find(c => c.kundennummer === kundenId);
+          if (foundClient) {
+            setCustomerData(foundClient);
+          }
+        }
       }
+      const filtered = installations.filter(inst => inst.kunden_id === kundenId);
+      setFilteredInstallations(filtered);
     }
   };
 
@@ -103,18 +120,29 @@ const ServiceRequestForm = ({ user }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setInstallations(data);
+        const filtered = isCustomer 
+          ? data.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
+          : data;
+        setInstallations(filtered);
+        if (isCustomer) {
+          setFilteredInstallations(filtered);
+        }
         localStorage.setItem('customer_installations', JSON.stringify(data));
       }
     } catch (error) {
       const cached = localStorage.getItem('customer_installations');
-      if (cached) {
-        setInstallations(JSON.parse(cached));
-      }
-      
       const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
-      if (pending.length > 0) {
-        setInstallations(prev => [...prev, ...pending]);
+      
+      let allAnlagen = [];
+      if (cached) allAnlagen = JSON.parse(cached);
+      if (pending.length > 0) allAnlagen = [...allAnlagen, ...pending];
+      
+      const filtered = isCustomer 
+        ? allAnlagen.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
+        : allAnlagen;
+      setInstallations(filtered);
+      if (isCustomer) {
+        setFilteredInstallations(filtered);
       }
     }
   };
@@ -275,15 +303,14 @@ const ServiceRequestForm = ({ user }) => {
         bemerkungen: formData.bemerkungen,
         status: 'neu',
         created_at: Date.now(),
-        synced: false
+        synced: false,
+        ...customerData
       };
 
-      // Save to localStorage first (offline-first)
       const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
       pending.push(requestData);
       localStorage.setItem('pending_service_requests', JSON.stringify(pending));
 
-      // Try server update
       if (!isOffline) {
         try {
           await fetch('/api/serviceanfrage', {
@@ -303,7 +330,7 @@ const ServiceRequestForm = ({ user }) => {
       
       localStorage.removeItem('service_request_draft');
       setFormData({
-        kunden_id: '',
+        kunden_id: isCustomer ? (user?.customer_id || user?.kunden_id) : '',
         anlagen_id: '',
         standort: '',
         filtertyp: '',
@@ -366,25 +393,28 @@ const ServiceRequestForm = ({ user }) => {
           {/* Kundendaten */}
           <div style={{ marginBottom: '40px' }}>
             <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>1. Kundendaten</h3>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kunden-ID auswählen *</label>
-              <select
-                value={formData.kunden_id}
-                onChange={(e) => {
-                  handleInputChange('kunden_id', e.target.value);
-                  loadCustomerData(e.target.value);
-                }}
-                required
-                style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-              >
-                <option value="">Kunde auswählen...</option>
-                {clients.map(client => (
-                  <option key={client.id || client.kundennummer} value={client.kundennummer}>
-                    {client.kundennummer} - {client.firmenname}
-                  </option>
-                ))}
-              </select>
-            </div>
+            
+            {!isCustomer && (
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kunden-ID auswählen *</label>
+                <select
+                  value={formData.kunden_id}
+                  onChange={(e) => {
+                    handleInputChange('kunden_id', e.target.value);
+                    loadCustomerData(e.target.value);
+                  }}
+                  required
+                  style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                >
+                  <option value="">Kunde auswählen...</option>
+                  {clients.map(client => (
+                    <option key={client.id || client.kundennummer} value={client.kundennummer}>
+                      {client.kundennummer} - {client.firmenname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             {formData.kunden_id && (
               <>
@@ -448,6 +478,11 @@ const ServiceRequestForm = ({ user }) => {
               {qrError && (
                 <div style={{ marginTop: '5px', color: '#dc3545', fontSize: '14px' }}>
                   {qrError}
+                </div>
+              )}
+              {selectedAnlage && selectedAnlage.qr_code_id && (
+                <div style={{ marginTop: '5px', color: '#28a745', fontSize: '14px' }}>
+                  ✓ QR-Code: {selectedAnlage.qr_code_id}
                 </div>
               )}
             </div>

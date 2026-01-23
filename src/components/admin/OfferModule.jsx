@@ -880,22 +880,6 @@ const OfferModule = ({ user }) => {
                         </button>
                       </>
                     )}
-                    {offer.status === 'angenommen' && (
-                      <button
-                        onClick={() => createInvoiceFromOffer(offer.id)}
-                        style={{
-                          padding: '4px 8px',
-                          border: 'none',
-                          backgroundColor: '#ffc107',
-                          color: 'white',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        Rechnung erstellen
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>

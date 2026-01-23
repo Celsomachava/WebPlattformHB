@@ -35,7 +35,6 @@ const CustomerOfferView = ({ user }) => {
     if (!window.confirm('Möchten Sie dieses Angebot wirklich annehmen?')) return;
 
     try {
-      // Update localStorage first (offline-first)
       const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
@@ -48,7 +47,6 @@ const CustomerOfferView = ({ user }) => {
         }
       }
 
-      // Try server update
       try {
         await fetch(`/api/angebote/${offerId}/accept`, {
           method: 'POST',

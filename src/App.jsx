@@ -8,13 +8,14 @@ import InvoiceModule from './components/admin/InvoiceModule';
 import KundenAnlegen from './components/admin/KundenAnlegen';
 import ClientManagement from './components/admin/ClientManagement';
 import ServiceRequestsOverview from './components/admin/ServiceRequestsOverview';
-import WochenplanModule from './components/admin/WochenplanModule';
-import PruefprotokollForm from './components/admin/PruefprotokollForm';
-import ArbeitsauftragModule from './components/admin/ArbeitsauftragModule';
+import WochenplanList from './components/admin/WochenplanList';
+import PruefprotokollList from './components/admin/PruefprotokollList';
+import ArbeitsauftragList from './components/admin/ArbeitsauftragList';
 import AnlageAnlegen from './components/admin/AnlageAnlegen';
-import GefaehrdungsbeurteilungModule from './components/admin/GefaehrdungsbeurteilungModule';
+import GefaehrdungsbeurteilungList from './components/admin/GefaehrdungsbeurteilungList';
 import CustomerOfferView from './components/customer/CustomerOfferView';
 import CustomerInvoiceView from './components/customer/CustomerInvoiceView';
+import CustomerServiceRequestsList from './components/customer/CustomerServiceRequestsList';
 
 // Working Admin Dashboard without problematic imports
 const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
@@ -133,22 +134,22 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
       
       {/* Wochenplan Tab */}
       {activeTab === 'wochenplan' && (
-        <WochenplanModule serviceAnfrageId="demo-request-001" />
+        <WochenplanList />
       )}
       
       {/* Prüfprotokoll Tab */}
       {activeTab === 'pruefprotokoll' && (
-        <PruefprotokollForm serviceAnfrageId="demo-request-001" />
+        <PruefprotokollList />
       )}
       
       {/* Arbeitsauftrag Tab */}
       {activeTab === 'arbeitsauftrag' && (
-        <ArbeitsauftragModule serviceAnfrageId="demo-request-001" />
+        <ArbeitsauftragList />
       )}
       
       {/* Gefährdungsbeurteilung Tab */}
       {activeTab === 'gefaehrdungsbeurteilung' && (
-        <GefaehrdungsbeurteilungModule serviceAnfrageId="demo-request-001" />
+        <GefaehrdungsbeurteilungList />
       )}
     </div>
   );
@@ -172,7 +173,7 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
              activeTab === 'angebote' ? 'Angebote' : 'Rechnungen'}</h3>
         {activeTab === 'service-requests' && (
           <div>
-            <p>Erstellen Sie eine neue Serviceanfrage:</p>
+            <CustomerServiceRequestsList user={user} />
             <button onClick={() => {
               window.location.href = '/customer/portal/service-request';
             }} style={{
@@ -182,7 +183,7 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
               color: 'white',
               border: 'none',
               borderRadius: '4px',
-              marginTop: '10px',
+              marginTop: '20px',
               cursor: 'pointer'
             }}>
               + Neue Serviceanfrage

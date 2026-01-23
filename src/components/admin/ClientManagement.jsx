@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import CustomerDetailsPage from './CustomerDetailsPage';
 
 const ClientManagement = ({ user }) => {
   const [clients, setClients] = useState([]);
@@ -7,6 +8,7 @@ const ClientManagement = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingClient, setEditingClient] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [viewingDetails, setViewingDetails] = useState(null);
 
   useEffect(() => {
     loadClients();
@@ -72,6 +74,14 @@ const ClientManagement = ({ user }) => {
     
     alert('Kunde wurde gelöscht!');
   };
+
+  const viewDetails = (client) => {
+    setViewingDetails(client);
+  };
+
+  if (viewingDetails) {
+    return <CustomerDetailsPage customer={viewingDetails} onBack={() => setViewingDetails(null)} />;
+  }
 
   if (editingClient) {
     return (
@@ -208,7 +218,11 @@ const ClientManagement = ({ user }) => {
               </tr>
             ) : (
               filteredClients.map(client => (
-                <tr key={client.id || client.kundennummer} style={{ borderBottom: '1px solid #dee2e6' }}>
+                <tr 
+                  key={client.id || client.kundennummer} 
+                  style={{ borderBottom: '1px solid #dee2e6', cursor: 'pointer' }}
+                  onDoubleClick={() => viewDetails(client)}
+                >
                   <td style={{ padding: '12px', fontWeight: '500' }}>{client.kundennummer}</td>
                   <td style={{ padding: '12px' }}>{client.firmenname}</td>
                   <td style={{ padding: '12px' }}>{client.ansprechpartner}</td>
@@ -220,7 +234,21 @@ const ClientManagement = ({ user }) => {
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '5px' }}>
                       <button
-                        onClick={() => editClient(client)}
+                        onClick={(e) => { e.stopPropagation(); viewDetails(client); }}
+                        style={{
+                          padding: '4px 8px',
+                          border: '1px solid #007bff',
+                          backgroundColor: 'transparent',
+                          color: '#007bff',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Details
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); editClient(client); }}
                         style={{
                           padding: '4px 8px',
                           border: '1px solid #ffc107',
@@ -234,7 +262,7 @@ const ClientManagement = ({ user }) => {
                         Bearbeiten
                       </button>
                       <button
-                        onClick={() => deleteClient(client.kundennummer)}
+                        onClick={(e) => { e.stopPropagation(); deleteClient(client.kundennummer); }}
                         style={{
                           padding: '4px 8px',
                           border: 'none',

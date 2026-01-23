@@ -47,11 +47,24 @@ const InvoiceModule = ({ user }) => {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
-        setInvoices(await response.json());
+        const data = await response.json();
+        setInvoices(data);
+        localStorage.setItem('admin_invoices', JSON.stringify(data));
       }
     } catch (error) {
       const cached = localStorage.getItem('admin_invoices');
-      if (cached) setInvoices(JSON.parse(cached));
+      const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
+      
+      let allInvoices = [];
+      if (cached) allInvoices = JSON.parse(cached);
+      if (pending.length > 0) {
+        const uniquePending = pending.filter(p => 
+          !allInvoices.some(inv => inv.id === p.id)
+        );
+        allInvoices = [...allInvoices, ...uniquePending];
+      }
+      
+      setInvoices(allInvoices);
     }
   };
 
@@ -131,6 +144,7 @@ const InvoiceModule = ({ user }) => {
   };
 
   const createInvoiceFromOffer = (offer) => {
+    const client = clients.find(c => c.kundennummer === offer.kunden_id);
     setInvoiceForm({
       nummer: generateInvoiceNumber(),
       kunden_id: offer.kunden_id,
@@ -139,8 +153,13 @@ const InvoiceModule = ({ user }) => {
       mwst_prozent: offer.mwst_prozent || 19,
       zahlungsbedingungen: 'Zahlbar innerhalb 14 Tagen ohne Abzug',
       faellig_am: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      bemerkungen: `Rechnung basierend auf Angebot ${offer.nummer}`
+      bemerkungen: `Rechnung basierend auf Angebot ${offer.nummer}`,
+      customerData: client || {}
     });
+    
+    const updatedOffers = offers.filter(o => o.id !== offer.id);
+    setOffers(updatedOffers);
+    
     setActiveView('create');
   };
 
@@ -153,10 +172,21 @@ const InvoiceModule = ({ user }) => {
   };
 
   const saveInvoice = async () => {
+    if (!invoiceForm.kunden_id) {
+      alert('Bitte wählen Sie einen Kunden aus.');
+      return;
+    }
+    
+    if (!invoiceForm.positionen || invoiceForm.positionen.length === 0) {
+      alert('Bitte fügen Sie mindestens eine Position hinzu.');
+      return;
+    }
+
     try {
       const { netto, mwstBetrag, brutto } = calculateTotals();
       
       const invoiceData = {
+        id: crypto.randomUUID(),
         ...invoiceForm,
         netto,
         mwst_betrag: mwstBetrag,
@@ -165,92 +195,86 @@ const InvoiceModule = ({ user }) => {
         created_at: Date.now()
       };
 
-      const response = await fetch('/api/rechnungen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await authService.getValidToken()}`
-        },
-        body: JSON.stringify(invoiceData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Create version history
-        await invoiceHistoryService.createVersion(result.id, {
-          action: 'created',
-          data: invoiceData
-        }, user?.id);
-        
-        // Generate PDF after saving
-        try {
-          const pdfResponse = await fetch(`/api/rechnungen/${result.id}/pdf`, {
-            headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-          });
-          
-          if (pdfResponse.ok) {
-            const blob = await pdfResponse.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Rechnung_${invoiceData.nummer}.pdf`;
-            a.click();
-          }
-        } catch (pdfError) {
-          console.log('PDF generation failed, continuing without PDF');
-        }
-        
-        alert('Rechnung wurde erfolgreich erstellt und als PDF gespeichert!');
-        loadInvoices();
-        loadAcceptedOffers();
-        setActiveView('list');
-        resetForm();
-      }
-    } catch (error) {
-      // Offline fallback
-      const offlineInvoice = {
-        id: crypto.randomUUID(),
-        ...invoiceForm,
-        ...calculateTotals(),
-        status: 'offen',
-        created_at: Date.now(),
-        synced: false
-      };
+      const cached = JSON.parse(localStorage.getItem('admin_invoices') || '[]');
+      cached.push(invoiceData);
+      localStorage.setItem('admin_invoices', JSON.stringify(cached));
       
       const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
-      pending.push(offlineInvoice);
+      pending.push(invoiceData);
       localStorage.setItem('pending_invoices', JSON.stringify(pending));
+
+      try {
+        const response = await fetch('/api/rechnungen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await authService.getValidToken()}`
+          },
+          body: JSON.stringify(invoiceData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          await invoiceHistoryService.createVersion(result.id, {
+            action: 'created',
+            data: invoiceData
+          }, user?.id);
+        }
+      } catch (e) {
+        console.log('Server update failed, saved offline');
+      }
       
-      alert('Rechnung wurde offline gespeichert und wird bei Internetverbindung übertragen.');
+      alert('Rechnung wurde erfolgreich erstellt!');
+      await loadInvoices();
+      await loadAcceptedOffers();
       setActiveView('list');
       resetForm();
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      alert('Fehler beim Erstellen der Rechnung: ' + error.message);
     }
   };
 
   const updateInvoiceStatus = async (invoiceId, newStatus) => {
     try {
-      const response = await fetch(`/api/rechnungen/${invoiceId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await authService.getValidToken()}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+      const updatedInvoices = invoices.map(inv => 
+        inv.id === invoiceId ? { ...inv, status: newStatus } : inv
+      );
+      setInvoices(updatedInvoices);
+      localStorage.setItem('admin_invoices', JSON.stringify(updatedInvoices));
+      
+      const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
+      const updatedPending = pending.map(inv => 
+        inv.id === invoiceId ? { ...inv, status: newStatus } : inv
+      );
+      localStorage.setItem('pending_invoices', JSON.stringify(updatedPending));
 
-      if (response.ok) {
-        await invoiceHistoryService.createVersion(invoiceId, {
-          action: 'status_changed',
-          old_status: invoices.find(i => i.id === invoiceId)?.status,
-          new_status: newStatus,
-          timestamp: Date.now()
-        }, user?.id);
-        
-        loadInvoices();
-        alert(`Rechnungsstatus wurde auf "${newStatus}" geändert.`);
+      try {
+        const response = await fetch(`/api/rechnungen/${invoiceId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await authService.getValidToken()}`
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (response.ok) {
+          await invoiceHistoryService.createVersion(invoiceId, {
+            action: 'status_changed',
+            old_status: invoices.find(i => i.id === invoiceId)?.status,
+            new_status: newStatus,
+            timestamp: Date.now()
+          }, user?.id);
+        }
+      } catch (e) {
+        console.log('Server update failed, saved offline');
       }
+      
+      alert(`Rechnungsstatus wurde auf "${newStatus}" geändert.`);
     } catch (error) {
+      console.error('Error updating status:', error);
       alert('Fehler beim Aktualisieren des Status');
     }
   };
