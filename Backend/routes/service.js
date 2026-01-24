@@ -64,4 +64,21 @@ router.post('/sync', (req, res) => {
   res.json({ synced, count: synced.length });
 });
 
+// Get service requests
+router.get('/requests', (req, res) => {
+  // Mock service requests data
+  const mockRequests = [
+    {
+      id: '1',
+      nummer: 'SR-2024-0001',
+      kunden_id: 'KUNDE_001',
+      serviceart: 'Wartung',
+      dringlichkeit: 'normal',
+      status: 'neu',
+      created_at: Date.now() - 86400000
+    }
+  ];
+  res.json(mockRequests);
+});
+
 export default router;

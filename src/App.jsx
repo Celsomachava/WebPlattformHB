@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import './styles/App.css';
 import { authService } from './services/simple-auth';
 import ServiceRequestForm from './components/customer/form/ServiceRequestForm';
@@ -16,6 +16,7 @@ import GefaehrdungsbeurteilungList from './components/admin/Gefaehrdungsbeurteil
 import CustomerOfferView from './components/customer/CustomerOfferView';
 import CustomerInvoiceView from './components/customer/CustomerInvoiceView';
 import CustomerServiceRequestsList from './components/customer/CustomerServiceRequestsList';
+import ProfileSettings from './components/profile/ProfileSettings.jsx';
 
 // Working Admin Dashboard without problematic imports
 const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
@@ -208,6 +209,20 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
 const TopBar = ({ user, onLogout, onShowProfile }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      setDropdownOpen(false);
+    };
+    
+    if (dropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [dropdownOpen]);
+  
   return (
     <div style={{
       background: '#007bff',
@@ -225,7 +240,10 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
       <h1 style={{ margin: 0, fontSize: '20px' }}>Heduschka Service</h1>
       <div style={{ position: 'relative' }}>
         <button 
-          onClick={() => setDropdownOpen(!dropdownOpen)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setDropdownOpen(!dropdownOpen);
+          }}
           style={{
             background: 'rgba(255,255,255,0.2)',
             color: 'white',
@@ -238,7 +256,7 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
             gap: '8px'
           }}
         >
-          Abmelden ({user?.role})
+          {user?.name || 'Benutzer'} ({user?.role === 'admin' || user?.role === 'ADMIN_001' ? 'Admin' : 'Kunde'})
           <span style={{ fontSize: '12px' }}>▼</span>
         </button>
         
@@ -249,14 +267,30 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
             right: 0,
             background: 'white',
             border: '1px solid #ddd',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            minWidth: '200px',
-            zIndex: 1001
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            minWidth: '280px',
+            zIndex: 1001,
+            overflow: 'hidden'
           }}>
+            <div style={{
+              padding: '16px',
+              borderBottom: '1px solid #eee',
+              background: '#f8f9fa'
+            }}>
+              <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                {user?.name || 'Benutzer'}
+              </div>
+              <div style={{ fontSize: '14px', color: '#6c757d', marginBottom: '2px' }}>
+                {user?.email || 'Keine E-Mail'}
+              </div>
+              <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                {user?.company || 'Kein Unternehmen'}
+              </div>
+            </div>
             <button
               onClick={() => {
-                onShowProfile();
+                window.location.href = '/profile';
                 setDropdownOpen(false);
               }}
               style={{
@@ -267,10 +301,14 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
                 textAlign: 'left',
                 cursor: 'pointer',
                 color: '#333',
-                borderBottom: '1px solid #eee'
+                borderBottom: '1px solid #eee',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
-              Profil anzeigen
+              <span>⚙️</span>
+              Profileinstellungen
             </button>
             <button
               onClick={() => {
@@ -284,9 +322,13 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
                 background: 'none',
                 textAlign: 'left',
                 cursor: 'pointer',
-                color: '#dc3545'
+                color: '#dc3545',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
+              <span>🚪</span>
               Abmelden
             </button>
           </div>
@@ -297,28 +339,28 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
 };
 
 const Sidebar = ({ user, activeTab, setActiveTab }) => {
-  const isAdmin = user?.role === 'ADMIN_001';
+  const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN_001';
   
   const adminMenuItems = [
-    { key: 'overview', label: 'Übersicht' },
-    { key: 'angebote', label: 'Angebote' },
-    { key: 'rechnungen', label: 'Rechnungen' },
-    { key: 'anfragen', label: 'Anfrage Übersicht' },
-    { key: 'kunden-anlegen', label: 'Kunden Anlegen' },
-    { key: 'kundenverwaltung', label: 'Kundenverwaltung' },
-    { key: 'anlage-anlegen', label: 'Anlage anlegen' },
-    { key: 'wochenplan', label: 'Wochenplan' },
-    { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV' },
-    { key: 'arbeitsauftrag', label: 'Arbeitsauftrag' },
-    { key: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilung' }
+    { key: 'overview', label: 'Übersicht', path: '/admin/dashboard' },
+    { key: 'angebote', label: 'Angebote', path: '/admin/dashboard' },
+    { key: 'rechnungen', label: 'Rechnungen', path: '/admin/dashboard' },
+    { key: 'anfragen', label: 'Anfrage Übersicht', path: '/admin/dashboard' },
+    { key: 'kunden-anlegen', label: 'Kunden Anlegen', path: '/admin/dashboard' },
+    { key: 'kundenverwaltung', label: 'Kundenverwaltung', path: '/admin/dashboard' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/admin/dashboard' },
+    { key: 'wochenplan', label: 'Wochenplan', path: '/admin/dashboard' },
+    { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV', path: '/admin/dashboard' },
+    { key: 'arbeitsauftrag', label: 'Arbeitsauftrag', path: '/admin/dashboard' },
+    { key: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilung', path: '/admin/dashboard' }
   ];
   
   const customerMenuItems = [
-    { key: 'overview', label: 'Übersicht' },
-    { key: 'service-requests', label: 'Serviceanfragen' },
-    { key: 'anlage-anlegen', label: 'Anlage anlegen' },
-    { key: 'angebote', label: 'Angebote' },
-    { key: 'rechnungen', label: 'Rechnungen' }
+    { key: 'overview', label: 'Übersicht', path: '/customer/dashboard' },
+    { key: 'service-requests', label: 'Serviceanfragen', path: '/customer/dashboard' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/customer/dashboard' },
+    { key: 'angebote', label: 'Angebote', path: '/customer/dashboard' },
+    { key: 'rechnungen', label: 'Rechnungen', path: '/customer/dashboard' }
   ];
   
   const menuItems = isAdmin ? adminMenuItems : customerMenuItems;
@@ -343,8 +385,9 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
       
       <nav>
         {menuItems.map(item => (
-          <button
+          <Link
             key={item.key}
+            to={item.path}
             onClick={() => setActiveTab(item.key)}
             style={{
               display: 'flex',
@@ -352,8 +395,8 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
               width: '100%',
               padding: '12px 20px',
               color: 'white',
+              textDecoration: 'none',
               backgroundColor: activeTab === item.key ? 'rgba(0,123,255,0.2)' : 'transparent',
-              border: 'none',
               borderLeft: activeTab === item.key ? '3px solid #007bff' : '3px solid transparent',
               cursor: 'pointer',
               fontSize: '14px',
@@ -361,7 +404,7 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
             }}
           >
             <span>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
     </div>
@@ -680,17 +723,23 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     const initAuth = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        if (mounted) {
+          setUser(currentUser);
+        }
       } catch (error) {
         console.error('Auth initialization failed:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
     initAuth();
+    return () => { mounted = false; };
   }, []);
 
   const login = async (customerId) => {
@@ -709,6 +758,7 @@ function App() {
     try {
       await authService.logout();
       setUser(null);
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -741,25 +791,33 @@ function App() {
         
         <Routes>
           <Route path="/" element={
-            user?.role === 'ADMIN_001' ? 
+            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
             <Navigate to="/admin/dashboard" replace /> : 
             <Navigate to="/customer/dashboard" replace />
           } />
           
           <Route path="/admin/dashboard" element={
-            user?.role === 'ADMIN_001' ? 
+            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
             <AdminDashboard user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
             <Navigate to="/customer/dashboard" replace />
           } />
           
-          <Route path="/customer/dashboard" element={
-            user?.role === 'KUNDE_XXX' ? 
+          <Route path="/admin/*" element={
+            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
+            <AdminDashboard user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
+            <Navigate to="/customer/dashboard" replace />
+          } />
+          
+          <Route path="/customer/*" element={
+            user?.role === 'customer' || user?.role === 'KUNDE_XXX' ? 
             <CustomerPortal user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
             <Navigate to="/admin/dashboard" replace />
           } />
           
+          <Route path="/profile" element={<ProfileSettings user={user} />} />
+          
           <Route path="/customer/portal/service-request" element={
-            user?.role === 'KUNDE_XXX' ? 
+            user?.role === 'customer' || user?.role === 'KUNDE_XXX' ? 
             <ServiceRequestForm user={user} /> : 
             <Navigate to="/admin/dashboard" replace />
           } />

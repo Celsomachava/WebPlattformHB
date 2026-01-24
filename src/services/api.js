@@ -1,79 +1,48 @@
-const API_BASE_URL = process.env.VITE_API_URL || 'https://api.heduschka.com';
+const API_BASE = 'http://localhost:3001/api';
 
-class ApiService {
-  constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
+export const apiService = {
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
+    const token = localStorage.getItem('heduschka_token');
+    
     const config = {
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers
       },
       ...options
     };
 
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(`${API_BASE}${endpoint}`, config);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-
+      
       return await response.json();
     } catch (error) {
-      console.error('API Request failed:', error);
+      console.error('API request failed:', error);
       throw error;
     }
-  }
+  },
 
-  // Submit service request (POST /api/serviceanfrage)
-  async submitServiceRequest(formData) {
-    const payload = {
-      kunden_id: formData.kundendaten.kunden_id,
-      anlagen_id: formData.anlagendaten.anlagen_id,
-      serviceart: formData.serviceangaben.serviceart,
-      dringlichkeit: formData.serviceangaben.dringlichkeit,
-      beschreibung: formData.serviceangaben.beschreibung,
-      bemerkungen: formData.zusatzinformationen.bemerkungen,
-      gewuenschter_termin: formData.serviceangaben.gewuenschter_termin,
-      photos: formData.zusatzinformationen.photos?.map(photo => photo.data) || [],
-      datenschutz_zustimmung: formData.rechtliches.datenschutz_zustimmung,
-      agb_akzeptiert: formData.rechtliches.agb_akzeptiert,
-      timestamp: Date.now()
-    };
-    
-    return this.request('/api/serviceanfrage', {
+  // Auth endpoints
+  async login(userId, password) {
+    return this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ userId, password })
+    });
+  },
+
+  async getCurrentUser() {
+    return this.request('/auth/me');
+  },
+
+  async validateToken(token) {
+    return this.request('/auth/validate', {
+      method: 'POST',
+      body: JSON.stringify({ token })
     });
   }
-
-  // Get form template
-  async getFormTemplate() {
-    return this.request('/api/form-template');
-  }
-
-  // Upload photos
-  async uploadPhoto(file, submissionId) {
-    const formData = new FormData();
-    formData.append('photo', file);
-    formData.append('submissionId', submissionId);
-
-    return this.request('/api/upload-photo', {
-      method: 'POST',
-      body: formData,
-      headers: {} // Remove Content-Type for FormData
-    });
-  }
-}
-
-export const apiService = new ApiService();
+};

@@ -5,9 +5,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "concurrently \"cd Backend && npm run dev\" \"npm run dev\"",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start:full": "concurrently \"cd Backend && npm run dev\" \"npm run dev\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -31,6 +33,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.2.2",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^0.16.0"
   },

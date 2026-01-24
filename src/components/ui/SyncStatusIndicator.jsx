@@ -1,57 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { syncService } from '../../services/syncService';
 
 const SyncStatusIndicator = () => {
-  const [status, setStatus] = useState('online');
-  const [isVisible, setIsVisible] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    const handleStatusChange = (newStatus) => {
-      setStatus(newStatus);
-      setIsVisible(true);
-      
-      // Hide after 3 seconds for success states
-      if (newStatus === 'synced' || newStatus === 'online') {
-        setTimeout(() => setIsVisible(false), 3000);
-      }
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-    syncService.addListener(handleStatusChange);
-    
-    // Initial status
-    const initialStatus = syncService.getStatus();
-    setStatus(initialStatus.isOnline ? 'online' : 'offline');
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      syncService.removeListener(handleStatusChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  if (!isVisible && status === 'online') return null;
-
-  const getStatusConfig = () => {
-    switch (status) {
-      case 'offline':
-        return { color: '#dc3545', text: 'Offline', icon: '📴' };
-      case 'syncing':
-        return { color: '#ffc107', text: 'Synchronisiert...', icon: '🔄' };
-      case 'synced':
-        return { color: '#28a745', text: 'Synchronisiert', icon: '✅' };
-      case 'sync-error':
-        return { color: '#dc3545', text: 'Sync-Fehler', icon: '❌' };
-      default:
-        return { color: '#28a745', text: 'Online', icon: '🟢' };
-    }
-  };
-
-  const config = getStatusConfig();
+  if (isOnline) return null;
 
   return (
     <div style={{
       position: 'fixed',
       top: '70px',
       right: '20px',
-      background: config.color,
+      background: '#dc3545',
       color: 'white',
       padding: '8px 12px',
       borderRadius: '20px',
@@ -61,19 +33,10 @@ const SyncStatusIndicator = () => {
       display: 'flex',
       alignItems: 'center',
       gap: '6px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-      animation: status === 'syncing' ? 'pulse 1.5s infinite' : 'none'
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
     }}>
-      <span>{config.icon}</span>
-      {config.text}
-      
-      <style jsx>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-      `}</style>
+      <span>📴</span>
+      Keine Internetverbindung
     </div>
   );
 };

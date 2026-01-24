@@ -9,7 +9,28 @@ const CustomerServiceRequestsList = ({ user }) => {
     loadRequests();
   }, []);
 
-  const loadRequests = () => {
+  const loadRequests = async () => {
+    try {
+      // Try API first
+      const response = await fetch('http://localhost:3001/api/service/requests', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('heduschka_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const apiRequests = await response.json();
+        const customerRequests = apiRequests.filter(r => 
+          r.kunden_id === (user?.customer_id || user?.kunden_id)
+        );
+        setRequests(customerRequests);
+        return;
+      }
+    } catch (error) {
+      console.error('API error, using fallback:', error);
+    }
+    
+    // Fallback to localStorage
     try {
       const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
       const cached = JSON.parse(localStorage.getItem('admin_service_requests') || '[]');

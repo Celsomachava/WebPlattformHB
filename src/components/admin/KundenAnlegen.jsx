@@ -60,7 +60,7 @@ const KundenAnlegen = ({ user }) => {
     setMessage('');
 
     try {
-      const response = await fetch('/api/kunden', {
+      const response = await fetch('http://localhost:3001/api/kunden', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

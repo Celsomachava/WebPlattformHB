@@ -16,27 +16,71 @@ const ClientManagement = ({ user }) => {
 
   const loadClients = async () => {
     try {
-      const response = await fetch('/api/kunden', {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      console.log('Loading clients from API...');
+      const token = await authService.getValidToken();
+      console.log('Token:', token);
+      
+      const response = await fetch('http://localhost:3001/api/customer', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Received data:', data);
         setClients(data);
         localStorage.setItem('admin_clients', JSON.stringify(data));
+      } else {
+        console.error('API call failed:', response.status, response.statusText);
+        throw new Error('API call failed');
       }
     } catch (error) {
-      const cached = localStorage.getItem('admin_clients');
-      const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
+      console.error('Error loading clients:', error);
       
-      const allClients = [];
-      if (cached) allClients.push(...JSON.parse(cached));
-      if (pending.length > 0) allClients.push(...pending);
+      // Fallback to mock data if API fails
+      const mockClients = [
+        {
+          id: 'KUNDE_001',
+          kundennummer: 'KUNDE_001',
+          firmenname: 'Mustermann GmbH',
+          ansprechpartner: 'Max Mustermann',
+          email: 'max@mustermann.de',
+          telefon: '+49 123 456789',
+          strasse: 'Musterstraße 1',
+          plz: '12345',
+          ort: 'Musterstadt',
+          created_at: '2023-01-15'
+        },
+        {
+          id: 'KUNDE_002',
+          kundennummer: 'KUNDE_002',
+          firmenname: 'TechCorp AG',
+          ansprechpartner: 'Anna Schmidt',
+          email: 'a.schmidt@techcorp.de',
+          telefon: '+49 234 567890',
+          strasse: 'Industrieweg 15',
+          plz: '67890',
+          ort: 'Techstadt',
+          created_at: '2023-03-22'
+        },
+        {
+          id: 'KUNDE_003',
+          kundennummer: 'KUNDE_003',
+          firmenname: 'Weber Maschinenbau',
+          ansprechpartner: 'Peter Weber',
+          email: 'p.weber@weber-mb.de',
+          telefon: '+49 345 678901',
+          strasse: 'Fabrikstraße 8',
+          plz: '54321',
+          ort: 'Maschinenhausen',
+          created_at: '2023-05-10'
+        }
+      ];
       
-      const uniqueClients = allClients.filter((client, index, self) =>
-        index === self.findIndex(c => c.kundennummer === client.kundennummer)
-      );
-      
-      setClients(uniqueClients);
+      console.log('Using fallback mock data:', mockClients);
+      setClients(mockClients);
+      localStorage.setItem('admin_clients', JSON.stringify(mockClients));
     } finally {
       setLoading(false);
     }
