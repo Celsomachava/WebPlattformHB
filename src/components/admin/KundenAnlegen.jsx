@@ -7,10 +7,20 @@ const KundenAnlegen = ({ user }) => {
     firmenname: '',
     ansprechpartner: '',
     email: '',
-    telefon: ''
+    telefon: '',
+    password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
 
   const generateKundennummer = () => {
     const existingClients = JSON.parse(localStorage.getItem('admin_clients') || '[]');
@@ -34,7 +44,8 @@ const KundenAnlegen = ({ user }) => {
            customerForm.firmenname && 
            customerForm.ansprechpartner && 
            customerForm.email && 
-           customerForm.telefon;
+           customerForm.telefon &&
+           customerForm.password;
   };
 
   const handleSubmit = async (e) => {
@@ -69,7 +80,8 @@ const KundenAnlegen = ({ user }) => {
           firmenname: '',
           ansprechpartner: '',
           email: '',
-          telefon: ''
+          telefon: '',
+          password: ''
         });
         
         // Update cached clients list
@@ -99,7 +111,8 @@ const KundenAnlegen = ({ user }) => {
         firmenname: '',
         ansprechpartner: '',
         email: '',
-        telefon: ''
+        telefon: '',
+        password: ''
       });
     } finally {
       setIsSubmitting(false);
@@ -237,6 +250,43 @@ const KundenAnlegen = ({ user }) => {
                 required
               />
             </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                Passwort *
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  value={customerForm.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder="Passwort für Kundenanmeldung"
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    fontSize: '16px'
+                  }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('password', generatePassword())}
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#ffc107',
+                    color: '#212529',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Generieren
+                </button>
+              </div>
+            </div>
           </div>
 
           {message && (
@@ -261,7 +311,8 @@ const KundenAnlegen = ({ user }) => {
                   firmenname: '',
                   ansprechpartner: '',
                   email: '',
-                  telefon: ''
+                  telefon: '',
+                  password: ''
                 });
                 setMessage('');
               }}

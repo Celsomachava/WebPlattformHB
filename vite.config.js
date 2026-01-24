@@ -45,5 +45,8 @@ export default defineConfig({
     target: 'es2015',
     outDir: 'dist',
     sourcemap: false
+  },
+  optimizeDeps: {
+    include: ['@react-pdf/renderer']
   }
 })

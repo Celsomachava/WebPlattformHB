@@ -205,33 +205,96 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
   );
 };
 
-const TopBar = ({ user, onLogout }) => (
-  <div style={{
-    background: '#007bff',
-    color: 'white',
-    padding: '12px 24px',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  }}>
-    <h1 style={{ margin: 0, fontSize: '20px' }}>Heduschka Service</h1>
-    <button onClick={onLogout} style={{
-      background: 'rgba(255,255,255,0.2)',
+const TopBar = ({ user, onLogout, onShowProfile }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  
+  return (
+    <div style={{
+      background: '#007bff',
       color: 'white',
-      border: 'none',
-      padding: '8px 16px',
-      borderRadius: '4px',
-      cursor: 'pointer'
+      padding: '12px 24px',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
     }}>
-      Abmelden ({user?.role})
-    </button>
-  </div>
-);
+      <h1 style={{ margin: 0, fontSize: '20px' }}>Heduschka Service</h1>
+      <div style={{ position: 'relative' }}>
+        <button 
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          Abmelden ({user?.role})
+          <span style={{ fontSize: '12px' }}>▼</span>
+        </button>
+        
+        {dropdownOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            background: 'white',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            minWidth: '200px',
+            zIndex: 1001
+          }}>
+            <button
+              onClick={() => {
+                onShowProfile();
+                setDropdownOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: 'none',
+                background: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                color: '#333',
+                borderBottom: '1px solid #eee'
+              }}
+            >
+              Profil anzeigen
+            </button>
+            <button
+              onClick={() => {
+                onLogout();
+                setDropdownOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: 'none',
+                background: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                color: '#dc3545'
+              }}
+            >
+              Abmelden
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const Sidebar = ({ user, activeTab, setActiveTab }) => {
   const isAdmin = user?.role === 'ADMIN_001';
@@ -305,8 +368,94 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
   );
 };
 
+const ProfileModal = ({ user, onClose }) => {
+  const customerData = {
+    id: user?.role || 'KUNDE_001',
+    name: 'Max Mustermann',
+    company: 'Mustermann GmbH',
+    email: 'max@mustermann.de',
+    phone: '+49 123 456789',
+    address: 'Musterstraße 1, 12345 Musterstadt',
+    registeredSince: '2023-01-15'
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 2000
+    }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '8px',
+        padding: '30px',
+        maxWidth: '500px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0 }}>Kundenprofil</h2>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '24px',
+            cursor: 'pointer',
+            color: '#666'
+          }}>×</button>
+        </div>
+        
+        <div style={{ display: 'grid', gap: '15px' }}>
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Kunden-ID:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.id}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Name:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.name}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Unternehmen:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.company}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>E-Mail:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.email}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Telefon:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.phone}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Adresse:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.address}</div>
+          </div>
+          
+          <div>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Registriert seit:</label>
+            <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '4px' }}>{customerData.registeredSince}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LoginComponent = ({ onLogin }) => {
   const [customerId, setCustomerId] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -397,6 +546,42 @@ const LoginComponent = ({ onLogin }) => {
               disabled={isLoading}
             />
           </div>
+          
+          <div style={{ marginBottom: '20px', position: 'relative' }}>
+            <div style={{
+              position: 'absolute',
+              left: '15px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#667eea'
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <circle cx="12" cy="16" r="1"></circle>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Passwort"
+              style={{
+                width: '100%',
+                padding: '15px 15px 15px 50px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '10px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border 0.3s',
+                boxSizing: 'border-box'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              required
+              disabled={isLoading}
+            />
+          </div>
 
           {error && (
             <div style={{
@@ -443,9 +628,45 @@ const LoginComponent = ({ onLogin }) => {
           color: '#667eea',
           textAlign: 'left'
         }}>
-          <strong>Demo-Tokens:</strong><br />
-          Kunde: KUNDE_001<br />
-          Admin: ADMIN_001
+          <strong>Demo-Anmeldung:</strong><br />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerId('KUNDE_001');
+                setPassword('demo123');
+              }}
+              style={{
+                padding: '8px 12px',
+                background: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}
+            >
+              Kunde Demo
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerId('ADMIN_001');
+                setPassword('admin123');
+              }}
+              style={{
+                padding: '8px 12px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}
+            >
+              Admin Demo
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -456,6 +677,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -513,7 +735,8 @@ function App() {
   return (
     <Router>
       <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
-        <TopBar user={user} onLogout={logout} />
+        <TopBar user={user} onLogout={logout} onShowProfile={() => setShowProfile(true)} />
+        {showProfile && <ProfileModal user={user} onClose={() => setShowProfile(false)} />}
         <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <Routes>
