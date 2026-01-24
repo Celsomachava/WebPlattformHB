@@ -1,5 +1,5 @@
 import express from 'express';
-import { mockCustomers, mockAnlagen } from '../data/mockData.js';
+import { mockCustomers, mockAnlagen, mockUsers } from '../data/mockData.js';
 
 const router = express.Router();
 
@@ -30,6 +30,38 @@ router.get('/anlagen/:id', (req, res) => {
   }
   
   res.json(anlage);
+});
+
+// Create customer route
+router.post('/create', (req, res) => {
+  const { kundennummer, firmenname, ansprechpartner, email, telefon, password } = req.body;
+  
+  if (!kundennummer || !firmenname || !ansprechpartner || !email || !telefon || !password) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const newCustomer = {
+    id: kundennummer,
+    name: ansprechpartner,
+    company: firmenname,
+    email,
+    phone: telefon,
+    password,
+    registeredSince: new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString()
+  };
+  
+  mockCustomers.push(newCustomer);
+  mockUsers.push({
+    id: kundennummer,
+    name: ansprechpartner,
+    role: 'customer',
+    token: `token_${kundennummer.toLowerCase()}`,
+    company: firmenname,
+    password
+  });
+  
+  res.status(201).json(newCustomer);
 });
 
 export default router;

@@ -24,7 +24,9 @@ export const mockCustomers = [
     company: 'Mustermann GmbH',
     email: 'max@mustermann.de',
     phone: '+49 123 456789',
-    address: 'Musterstraße 1, 12345 Musterstadt'
+    address: 'Musterstraße 1, 12345 Musterstadt',
+    password: 'demo123',
+    registeredSince: '2023-01-15'
   }
 ];
 
