@@ -74,6 +74,7 @@ const KundenAnlegen = ({ user }) => {
       });
 
       if (response.ok) {
+        const newCustomer = await response.json();
         setMessage('Kunde wurde erfolgreich angelegt!');
         setCustomerForm({
           kundennummer: '',
@@ -84,10 +85,22 @@ const KundenAnlegen = ({ user }) => {
           password: ''
         });
         
-        // Update cached clients list
+        // Update cached clients list with transformed data
         const cachedClients = JSON.parse(localStorage.getItem('admin_clients') || '[]');
-        cachedClients.push(await response.json());
+        const transformedCustomer = {
+          id: newCustomer.id,
+          kundennummer: newCustomer.id,
+          firmenname: newCustomer.company,
+          ansprechpartner: newCustomer.name,
+          email: newCustomer.email,
+          telefon: newCustomer.phone,
+          created_at: newCustomer.registeredSince
+        };
+        cachedClients.push(transformedCustomer);
         localStorage.setItem('admin_clients', JSON.stringify(cachedClients));
+        
+        // Trigger storage event for other components
+        window.dispatchEvent(new Event('storage'));
       } else {
         throw new Error('Fehler beim Anlegen des Kunden');
       }

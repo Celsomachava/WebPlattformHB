@@ -128,7 +128,6 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Filtertyp</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>QR-Code</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Erstellt am</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,17 +143,6 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                     </td>
                     <td style={{ padding: '12px' }}>
                       {asset.created_at ? new Date(asset.created_at).toLocaleDateString('de-DE') : '-'}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        color: 'white',
-                        backgroundColor: asset.synced === false ? '#ffc107' : '#28a745'
-                      }}>
-                        {asset.synced === false ? 'Ausstehend' : 'Aktiv'}
-                      </span>
                     </td>
                   </tr>
                 ))}

@@ -12,6 +12,17 @@ const ClientManagement = ({ user }) => {
 
   useEffect(() => {
     loadClients();
+    
+    // Listen for storage changes (new customers added)
+    const handleStorageChange = () => {
+      loadClients();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const loadClients = async () => {
@@ -29,8 +40,13 @@ const ClientManagement = ({ user }) => {
       if (response.ok) {
         const data = await response.json();
         console.log('Received data:', data);
-        setClients(data);
-        localStorage.setItem('admin_clients', JSON.stringify(data));
+        
+        // Merge with any pending customers from localStorage
+        const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
+        const allClients = [...data, ...pending];
+        
+        setClients(allClients);
+        localStorage.setItem('admin_clients', JSON.stringify(allClients));
       } else {
         console.error('API call failed:', response.status, response.statusText);
         throw new Error('API call failed');
@@ -38,49 +54,55 @@ const ClientManagement = ({ user }) => {
     } catch (error) {
       console.error('Error loading clients:', error);
       
-      // Fallback to mock data if API fails
-      const mockClients = [
-        {
-          id: 'KUNDE_001',
-          kundennummer: 'KUNDE_001',
-          firmenname: 'Mustermann GmbH',
-          ansprechpartner: 'Max Mustermann',
-          email: 'max@mustermann.de',
-          telefon: '+49 123 456789',
-          strasse: 'Musterstraße 1',
-          plz: '12345',
-          ort: 'Musterstadt',
-          created_at: '2023-01-15'
-        },
-        {
-          id: 'KUNDE_002',
-          kundennummer: 'KUNDE_002',
-          firmenname: 'TechCorp AG',
-          ansprechpartner: 'Anna Schmidt',
-          email: 'a.schmidt@techcorp.de',
-          telefon: '+49 234 567890',
-          strasse: 'Industrieweg 15',
-          plz: '67890',
-          ort: 'Techstadt',
-          created_at: '2023-03-22'
-        },
-        {
-          id: 'KUNDE_003',
-          kundennummer: 'KUNDE_003',
-          firmenname: 'Weber Maschinenbau',
-          ansprechpartner: 'Peter Weber',
-          email: 'p.weber@weber-mb.de',
-          telefon: '+49 345 678901',
-          strasse: 'Fabrikstraße 8',
-          plz: '54321',
-          ort: 'Maschinenhausen',
-          created_at: '2023-05-10'
-        }
-      ];
-      
-      console.log('Using fallback mock data:', mockClients);
-      setClients(mockClients);
-      localStorage.setItem('admin_clients', JSON.stringify(mockClients));
+      // Load from localStorage
+      const cached = localStorage.getItem('admin_clients');
+      if (cached) {
+        setClients(JSON.parse(cached));
+      } else {
+        // Fallback to mock data if nothing in cache
+        const mockClients = [
+          {
+            id: 'KUNDE_001',
+            kundennummer: 'KUNDE_001',
+            firmenname: 'Mustermann GmbH',
+            ansprechpartner: 'Max Mustermann',
+            email: 'max@mustermann.de',
+            telefon: '+49 123 456789',
+            strasse: 'Musterstraße 1',
+            plz: '12345',
+            ort: 'Musterstadt',
+            created_at: '2023-01-15'
+          },
+          {
+            id: 'KUNDE_002',
+            kundennummer: 'KUNDE_002',
+            firmenname: 'TechCorp AG',
+            ansprechpartner: 'Anna Schmidt',
+            email: 'a.schmidt@techcorp.de',
+            telefon: '+49 234 567890',
+            strasse: 'Industrieweg 15',
+            plz: '67890',
+            ort: 'Techstadt',
+            created_at: '2023-03-22'
+          },
+          {
+            id: 'KUNDE_003',
+            kundennummer: 'KUNDE_003',
+            firmenname: 'Weber Maschinenbau',
+            ansprechpartner: 'Peter Weber',
+            email: 'p.weber@weber-mb.de',
+            telefon: '+49 345 678901',
+            strasse: 'Fabrikstraße 8',
+            plz: '54321',
+            ort: 'Maschinenhausen',
+            created_at: '2023-05-10'
+          }
+        ];
+        
+        console.log('Using fallback mock data:', mockClients);
+        setClients(mockClients);
+        localStorage.setItem('admin_clients', JSON.stringify(mockClients));
+      }
     } finally {
       setLoading(false);
     }

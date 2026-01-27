@@ -307,13 +307,9 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
         ...customerData
       };
 
-      const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
-      pending.push(requestData);
-      localStorage.setItem('pending_service_requests', JSON.stringify(pending));
-
       if (!isOffline) {
         try {
-          await fetch('/api/serviceanfrage', {
+          const response = await fetch('/api/serviceanfrage', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -321,12 +317,28 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
             },
             body: JSON.stringify(requestData)
           });
+          
+          if (response.ok) {
+            // Successfully sent to server, don't save to pending
+            alert('Serviceanfrage wurde erfolgreich übermittelt!');
+          } else {
+            throw new Error('Server error');
+          }
         } catch (e) {
-          console.log('Server update failed, saved offline');
+          console.log('Server update failed, saving offline');
+          // Only save to pending if server fails
+          const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
+          pending.push(requestData);
+          localStorage.setItem('pending_service_requests', JSON.stringify(pending));
+          alert('Serviceanfrage wurde offline gespeichert.');
         }
+      } else {
+        // Offline mode - save to pending
+        const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
+        pending.push(requestData);
+        localStorage.setItem('pending_service_requests', JSON.stringify(pending));
+        alert('Serviceanfrage wurde offline gespeichert.');
       }
-      
-      alert('Serviceanfrage wurde erfolgreich übermittelt!');
       
       localStorage.removeItem('service_request_draft');
       setFormData({
@@ -348,7 +360,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
       
     } catch (error) {
       console.error('Submit error:', error);
-      alert('Serviceanfrage wurde offline gespeichert.');
+      alert('Fehler beim Senden der Serviceanfrage.');
     } finally {
       setIsSubmitting(false);
     }

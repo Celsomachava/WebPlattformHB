@@ -36,19 +36,28 @@ const ServiceRequestsOverview = ({ user }) => {
         }));
         setRequests(enriched);
         localStorage.setItem('admin_service_requests', JSON.stringify(enriched));
+      } else {
+        throw new Error('API failed');
       }
     } catch (error) {
+      // Load from cache first
       const cached = localStorage.getItem('admin_service_requests');
-      if (cached) setRequests(JSON.parse(cached));
+      let allRequests = cached ? JSON.parse(cached) : [];
       
+      // Add pending requests but avoid duplicates
       const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
-      if (pending.length > 0) {
-        const enriched = pending.map(req => ({
+      const cachedIds = new Set(allRequests.map(r => r.id));
+      const uniquePending = pending.filter(p => !cachedIds.has(p.id));
+      
+      if (uniquePending.length > 0) {
+        const enriched = uniquePending.map(req => ({
           ...req,
           ...getCustomerDataSync(req.kunden_id)
         }));
-        setRequests(prev => [...prev, ...enriched]);
+        allRequests = [...allRequests, ...enriched];
       }
+      
+      setRequests(allRequests);
     } finally {
       setLoading(false);
     }
@@ -225,7 +234,9 @@ const ServiceRequestsOverview = ({ user }) => {
                   <option value="abgeschlossen">Abgeschlossen</option>
                   <option value="storniert">Storniert</option>
                 </select>
-                <span style={{ fontSize: '14px', color: '#28a745' }}>✓ Status wird automatisch aktualisiert</span>
+              </div>
+              <div style={{ marginTop: '10px', fontSize: '13px', color: '#6c757d', fontStyle: 'italic' }}>
+                Der Status wird automatisch aktualisiert, wenn Sie eine Option auswählen.
               </div>
             </div>
 

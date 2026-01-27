@@ -75,14 +75,21 @@ const InvoiceModule = ({ user }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setOffers(data.filter(offer => !invoices.some(inv => inv.angebot_id === offer.id)));
+        const uninvoiced = data.filter(offer => 
+          !offer.invoiced && !invoices.some(inv => inv.angebot_id === offer.id)
+        );
+        setOffers(uninvoiced);
       }
     } catch (error) {
       // Load from localStorage (offline-first)
       const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
-        const acceptedOffers = allOffers.filter(o => o.status === 'angenommen' && !invoices.some(inv => inv.angebot_id === o.id));
+        const acceptedOffers = allOffers.filter(o => 
+          o.status === 'angenommen' && 
+          !o.invoiced && 
+          !invoices.some(inv => inv.angebot_id === o.id)
+        );
         setOffers(acceptedOffers);
       }
     }
@@ -157,9 +164,6 @@ const InvoiceModule = ({ user }) => {
       customerData: client || {}
     });
     
-    const updatedOffers = offers.filter(o => o.id !== offer.id);
-    setOffers(updatedOffers);
-    
     setActiveView('create');
   };
 
@@ -202,6 +206,19 @@ const InvoiceModule = ({ user }) => {
       const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
       pending.push(invoiceData);
       localStorage.setItem('pending_invoices', JSON.stringify(pending));
+
+      // Remove the offer from the list if invoice was created from an offer
+      if (invoiceForm.angebot_id) {
+        const updatedOffers = offers.filter(o => o.id !== invoiceForm.angebot_id);
+        setOffers(updatedOffers);
+        
+        // Update cached offers to mark as invoiced
+        const cachedOffers = JSON.parse(localStorage.getItem('admin_offers') || '[]');
+        const updatedCachedOffers = cachedOffers.map(o => 
+          o.id === invoiceForm.angebot_id ? { ...o, invoiced: true } : o
+        );
+        localStorage.setItem('admin_offers', JSON.stringify(updatedCachedOffers));
+      }
 
       try {
         const response = await fetch('/api/rechnungen', {
@@ -281,6 +298,7 @@ const InvoiceModule = ({ user }) => {
 
   const generatePDF = async (invoice) => {
     try {
+      // Check if PDF service is available
       const response = await fetch(`/api/rechnungen/${invoice.id}/pdf`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
@@ -291,10 +309,87 @@ const InvoiceModule = ({ user }) => {
         const a = document.createElement('a');
         a.href = url;
         a.download = `Rechnung_${invoice.nummer}.pdf`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error('PDF generation failed on server');
       }
     } catch (error) {
-      alert('PDF-Generierung nicht verfügbar (Offline)');
+      console.error('PDF generation error:', error);
+      
+      // Fallback: Open print dialog with invoice data
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        const client = clients.find(c => c.kundennummer === invoice.kunden_id);
+        
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Rechnung ${invoice.nummer}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; }
+              h1 { color: #333; }
+              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+              th { background-color: #f8f9fa; }
+              .totals { text-align: right; margin-top: 20px; }
+              .totals div { margin: 5px 0; }
+              .brutto { font-size: 18px; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <h1>Rechnung ${invoice.nummer}</h1>
+            <p><strong>Kunde:</strong> ${client?.firmenname || invoice.kunden_id}</p>
+            <p><strong>Datum:</strong> ${new Date(invoice.created_at).toLocaleDateString('de-DE')}</p>
+            <p><strong>Fällig am:</strong> ${invoice.faellig_am}</p>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>Beschreibung</th>
+                  <th>Menge</th>
+                  <th>Einzelpreis</th>
+                  <th>Gesamtpreis</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${invoice.positionen.map((pos, i) => `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td>${pos.beschreibung}</td>
+                    <td>${pos.menge}</td>
+                    <td>€${pos.einzelpreis?.toFixed(2) || '0.00'}</td>
+                    <td>€${pos.gesamtpreis?.toFixed(2) || '0.00'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <div class="totals">
+              <div>Netto: €${invoice.netto?.toFixed(2) || '0.00'}</div>
+              <div>MwSt. (${invoice.mwst_prozent}%): €${invoice.mwst_betrag?.toFixed(2) || '0.00'}</div>
+              <div class="brutto">Brutto: €${invoice.brutto?.toFixed(2) || '0.00'}</div>
+            </div>
+            
+            <p><strong>Zahlungsbedingungen:</strong> ${invoice.zahlungsbedingungen}</p>
+            ${invoice.bemerkungen ? `<p><strong>Bemerkungen:</strong> ${invoice.bemerkungen}</p>` : ''}
+            
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } else {
+        alert('PDF-Generierung nicht verfügbar. Bitte erlauben Sie Pop-ups für diese Seite.');
+      }
     }
   };
 

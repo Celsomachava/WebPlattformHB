@@ -38,16 +38,28 @@ const AnlageAnlegen = ({ user }) => {
       if (response.ok) {
         const data = await response.json();
         setClients(data);
+        return;
       }
     } catch (error) {
-      const cached = localStorage.getItem('admin_clients');
-      if (cached) setClients(JSON.parse(cached));
-      
-      const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
-      if (pending.length > 0) {
-        setClients(prev => [...prev, ...pending]);
-      }
+      console.error('Error loading clients:', error);
     }
+    
+    // Fallback to localStorage
+    const cached = localStorage.getItem('admin_clients');
+    const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
+    
+    let allClients = [];
+    if (cached) allClients = JSON.parse(cached);
+    
+    // Remove duplicates by kundennummer
+    const uniqueClients = [...allClients, ...pending].reduce((acc, client) => {
+      if (!acc.find(c => c.kundennummer === client.kundennummer)) {
+        acc.push(client);
+      }
+      return acc;
+    }, []);
+    
+    setClients(uniqueClients);
   };
 
   const loadAnlagen = async () => {
@@ -583,7 +595,7 @@ const AnlageAnlegen = ({ user }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ marginBottom: '10px' }}>
-                      <strong style={{ color: '#007bff', fontSize: '16px' }}>{anlage.anlagen_id || anlage.id}</strong>
+                      <strong style={{ color: '#007bff', fontSize: '16px' }}>{anlage.anlagen_id}</strong>
                     </div>
                     <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
                       {!isCustomer && (

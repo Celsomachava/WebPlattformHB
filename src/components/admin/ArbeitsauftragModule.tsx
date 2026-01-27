@@ -122,11 +122,9 @@ const ArbeitsauftragModule: React.FC<Props> = ({ serviceAnfrageId, onBack }) => 
       return;
     }
     try {
-      if (data.created_at === data.updated_at) {
-        await arbeitsauftragService.create(data);
-      } else {
-        await arbeitsauftragService.update(data.id, data);
-      }
+      const updated = { ...data, updated_at: Date.now() };
+      await arbeitsauftragService.update(data.id, updated);
+      setData(updated);
       setErrors([]);
       alert('Gespeichert!');
     } catch (error) {

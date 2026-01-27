@@ -128,11 +128,9 @@ const GefaehrdungsbeurteilungModule: React.FC<Props> = ({ serviceAnfrageId, onBa
       return;
     }
     try {
-      if (data.created_at === data.updated_at) {
-        await gefaehrdungsbeurteilungService.create(data);
-      } else {
-        await gefaehrdungsbeurteilungService.update(data.id, data);
-      }
+      const updated = { ...data, updated_at: Date.now() };
+      await gefaehrdungsbeurteilungService.update(data.id, updated);
+      setData(updated);
       setErrors([]);
       alert('Gespeichert!');
     } catch (error) {

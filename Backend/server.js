@@ -34,6 +34,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/service', authMiddleware, serviceRoutes);
 app.use('/api/customer', authMiddleware, customerRoutes);
 app.use('/api/kunden', authMiddleware, customerRoutes);
+app.use('/api/serviceanfragen', authMiddleware, serviceRoutes);
+app.use('/api/serviceanfrage', authMiddleware, serviceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

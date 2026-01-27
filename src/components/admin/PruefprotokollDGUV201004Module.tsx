@@ -314,14 +314,13 @@ const PruefprotokollDGUV201004Module: React.FC<PruefprotokollModuleProps> = ({ s
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Servicetechniker Unterschrift *</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Servicetechniker Unterschrift</label>
             <input
               type="text"
               value={data.servicetechniker_unterschrift}
               onChange={(e) => handleUpdate('servicetechniker_unterschrift', e.target.value)}
               placeholder="Name eingeben"
               style={{ width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-              required
             />
           </div>
         </div>

@@ -57,8 +57,10 @@ export function FormListManager<T>({
     if (!window.confirm('Möchten Sie diesen Eintrag wirklich löschen?')) return;
     try {
       await service.delete(id);
-      loadItems();
+      await loadItems();
+      alert('Eintrag wurde erfolgreich gelöscht.');
     } catch (error) {
+      console.error('Delete error:', error);
       alert('Fehler beim Löschen');
     }
   };
