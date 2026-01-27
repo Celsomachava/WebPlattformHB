@@ -82,11 +82,14 @@ const PruefprotokollDGUV201004Module: React.FC<PruefprotokollModuleProps> = ({ s
     }
 
     try {
-      if (data.created_at === data.updated_at) {
-        await pruefprotokollService.create(data);
+      const existing = await pruefprotokollService.get(data.id);
+      let saved;
+      if (existing) {
+        saved = await pruefprotokollService.update(data.id, { ...data, updated_at: Date.now() });
       } else {
-        await pruefprotokollService.update(data.id, data);
+        saved = await pruefprotokollService.create(data);
       }
+      setData(saved);
       setErrors([]);
       alert('Prüfprotokoll erfolgreich gespeichert!');
     } catch (error) {

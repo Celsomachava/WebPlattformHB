@@ -147,14 +147,15 @@ const WochenplanModule: React.FC<WochenplanModuleProps> = ({ serviceAnfrageId, o
 
     try {
       const existing = await wochenplanService.get(plan.id);
+      let saved;
       if (existing) {
-        await wochenplanService.update(plan.id, plan);
+        saved = await wochenplanService.update(plan.id, { ...plan, updated_at: Date.now() });
       } else {
-        await wochenplanService.create(plan);
+        saved = await wochenplanService.create(plan);
       }
+      setPlan(saved);
       setErrors([]);
       alert('Wochenplan erfolgreich gespeichert!');
-      if (onBack) onBack();
     } catch (error) {
       setErrors(['Fehler beim Speichern']);
     }

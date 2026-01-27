@@ -119,13 +119,6 @@ class PruefprotokollService {
       }
       throw new Error('Failed to update Pruefprotokoll');
     } catch (error) {
-      const pending = JSON.parse(localStorage.getItem('pending_pruefprotokoll') || '[]');
-      const index = pending.findIndex((p: PruefprotokollDGUV201004) => p.id === id);
-      if (index !== -1) {
-        pending[index] = { ...pending[index], ...data, updated_at: Date.now() };
-        localStorage.setItem('pending_pruefprotokoll', JSON.stringify(pending));
-        return pending[index];
-      }
       throw error;
     }
   }

@@ -119,13 +119,6 @@ class GefaehrdungsbeurteilungService {
       }
       throw new Error('Failed to update');
     } catch (error) {
-      const pending = JSON.parse(localStorage.getItem('pending_gefaehrdungsbeurteilung') || '[]');
-      const index = pending.findIndex((p: GefaehrdungsbeurteilungAussendienst) => p.id === id);
-      if (index !== -1) {
-        pending[index] = { ...pending[index], ...data, updated_at: Date.now() };
-        localStorage.setItem('pending_gefaehrdungsbeurteilung', JSON.stringify(pending));
-        return pending[index];
-      }
       throw error;
     }
   }

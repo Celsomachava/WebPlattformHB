@@ -106,7 +106,7 @@ const ProfileSettings = ({ user }) => {
     }
   };
 
-  const InputField = ({ label, type = 'text', value, onChange, required = false }) => (
+  const InputField = ({ label, type = 'text', value, onChange, required = false, disabled = false }) => (
     <div style={{ marginBottom: '20px' }}>
       <label style={{ 
         display: 'block', 
@@ -120,12 +120,15 @@ const ProfileSettings = ({ user }) => {
         type={type}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         style={{
           width: '100%',
           padding: '10px',
           border: '1px solid #ddd',
           borderRadius: '4px',
-          fontSize: '14px'
+          fontSize: '14px',
+          backgroundColor: disabled ? '#e9ecef' : 'white',
+          cursor: disabled ? 'not-allowed' : 'text'
         }}
       />
     </div>
@@ -189,6 +192,7 @@ const ProfileSettings = ({ user }) => {
               label="Vollständiger Name"
               value={personalData.name}
               onChange={(e) => setPersonalData({...personalData, name: e.target.value})}
+              disabled={user?.role !== 'admin'}
               required
             />
             <InputField
@@ -196,17 +200,20 @@ const ProfileSettings = ({ user }) => {
               type="email"
               value={personalData.email}
               onChange={(e) => setPersonalData({...personalData, email: e.target.value})}
+              disabled={user?.role !== 'admin'}
               required
             />
             <InputField
               label="Telefonnummer"
               value={personalData.phone}
               onChange={(e) => setPersonalData({...personalData, phone: e.target.value})}
+              disabled={user?.role !== 'admin'}
             />
             <InputField
               label="Position"
               value={personalData.position}
               onChange={(e) => setPersonalData({...personalData, position: e.target.value})}
+              disabled={user?.role !== 'admin'}
             />
           </div>
           
@@ -214,30 +221,40 @@ const ProfileSettings = ({ user }) => {
             label="Unternehmen"
             value={personalData.company}
             onChange={(e) => setPersonalData({...personalData, company: e.target.value})}
+            disabled={user?.role !== 'admin'}
           />
           
           <InputField
             label="Adresse"
             value={personalData.address}
             onChange={(e) => setPersonalData({...personalData, address: e.target.value})}
+            disabled={user?.role !== 'admin'}
           />
 
-          <button
-            onClick={savePersonalData}
-            disabled={loading}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              opacity: loading ? 0.7 : 1
-            }}
-          >
-            {loading ? 'Speichern...' : 'Änderungen speichern'}
-          </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={savePersonalData}
+              disabled={loading}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: '500',
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? 'Speichern...' : 'Änderungen speichern'}
+            </button>
+          )}
+          
+          {user?.role !== 'admin' && (
+            <div style={{ padding: '12px', backgroundColor: '#e7f3ff', borderRadius: '4px', color: '#0c5460', fontSize: '14px' }}>
+              ℹ️ Diese Daten können nur vom Administrator geändert werden.
+            </div>
+          )}
         </div>
       )}
 
@@ -246,27 +263,72 @@ const ProfileSettings = ({ user }) => {
           <h2 style={{ marginBottom: '25px', color: '#333' }}>Passwort ändern</h2>
           
           <div style={{ maxWidth: '400px' }}>
-            <InputField
-              label="Aktuelles Passwort"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-              required
-            />
-            <InputField
-              label="Neues Passwort"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-              required
-            />
-            <InputField
-              label="Neues Passwort bestätigen"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-              required
-            />
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '5px', 
+                fontWeight: '500',
+                color: '#333'
+              }}>
+                Aktuelles Passwort <span style={{ color: '#dc3545' }}>*</span>
+              </label>
+              <input
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, currentPassword: e.target.value}))}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '5px', 
+                fontWeight: '500',
+                color: '#333'
+              }}>
+                Neues Passwort <span style={{ color: '#dc3545' }}>*</span>
+              </label>
+              <input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, newPassword: e.target.value}))}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '5px', 
+                fontWeight: '500',
+                color: '#333'
+              }}>
+                Neues Passwort bestätigen <span style={{ color: '#dc3545' }}>*</span>
+              </label>
+              <input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, confirmPassword: e.target.value}))}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
           </div>
 
           <button

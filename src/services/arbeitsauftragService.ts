@@ -119,13 +119,6 @@ class ArbeitsauftragService {
       }
       throw new Error('Failed to update');
     } catch (error) {
-      const pending = JSON.parse(localStorage.getItem('pending_arbeitsauftrag') || '[]');
-      const index = pending.findIndex((p: ArbeitsauftragServicebericht) => p.id === id);
-      if (index !== -1) {
-        pending[index] = { ...pending[index], ...data, updated_at: Date.now() };
-        localStorage.setItem('pending_arbeitsauftrag', JSON.stringify(pending));
-        return pending[index];
-      }
       throw error;
     }
   }
