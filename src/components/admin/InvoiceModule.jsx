@@ -431,8 +431,16 @@ const InvoiceModule = ({ user }) => {
     const { netto, mwstBetrag, brutto } = calculateTotals();
     
     return (
-      <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ 
+        padding: '20px',
+        width: '100%',
+        maxWidth: '100vw',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ 
+          width: '100%',
+          boxSizing: 'border-box'
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
             <h1>Neue Rechnung erstellen</h1>
             <button onClick={() => setActiveView('list')} style={{
@@ -653,7 +661,12 @@ const InvoiceModule = ({ user }) => {
   }
 
   return (
-    <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
+    <div style={{ 
+      padding: '20px',
+      width: '100%',
+      maxWidth: '100vw',
+      boxSizing: 'border-box'
+    }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Rechnungsmodul</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Rechnungen erstellen, verwalten und versenden</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
 import { offerHistoryService } from '../../services/offerHistoryService';
+import InvoiceStyleForm from './InvoiceStyleForm';
 
 const OfferModule = ({ user }) => {
   const [activeView, setActiveView] = useState('list');
@@ -473,239 +474,22 @@ const OfferModule = ({ user }) => {
   };
 
   if (activeView === 'create' || activeView === 'edit') {
-    const { netto, mwstBetrag, brutto } = calculateTotals();
-    
     return (
-      <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-            <h1>{activeView === 'edit' ? 'Angebot bearbeiten' : 'Neues Angebot erstellen'}</h1>
-            <button onClick={() => setActiveView('list')} style={{
-              padding: '8px 16px',
-              border: '1px solid #6c757d',
-              backgroundColor: 'transparent',
-              color: '#6c757d',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}>
-              Zurück zur Liste
-            </button>
-          </div>
-
-          <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
-            {/* Grunddaten */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Angebotsnummer</label>
-                <input
-                  type="text"
-                  value={offerForm.nummer || generateOfferNumber()}
-                  onChange={(e) => setOfferForm(prev => ({ ...prev, nummer: e.target.value }))}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Kunden-ID *</label>
-                <select
-                  value={offerForm.kunden_id}
-                  onChange={(e) => setOfferForm(prev => ({ ...prev, kunden_id: e.target.value }))}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                  required
-                >
-                  <option value="">Kunde auswählen...</option>
-                  {clients.map(client => (
-                    <option key={client.id || client.kundennummer} value={client.kundennummer}>
-                      {client.kundennummer} - {client.firmenname}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Gültig bis</label>
-                <input
-                  type="date"
-                  value={offerForm.gueltig_bis}
-                  onChange={(e) => setOfferForm(prev => ({ ...prev, gueltig_bis: e.target.value }))}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                />
-              </div>
-            </div>
-
-            {/* Positionen */}
-            <div style={{ marginBottom: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3>Angebotspositionen</h3>
-                <button onClick={addPosition} style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}>
-                  + Position hinzufügen
-                </button>
-              </div>
-              
-              {offerForm.positionen.map((position, index) => (
-                <div key={position.id} style={{
-                  border: '1px solid #dee2e6',
-                  borderRadius: '4px',
-                  padding: '15px',
-                  marginBottom: '10px',
-                  backgroundColor: '#f8f9fa'
-                }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr 100px 120px 120px 40px', gap: '10px', alignItems: 'end' }}>
-                    <select
-                      value={position.type}
-                      onChange={(e) => updatePosition(index, 'type', e.target.value)}
-                      style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                    >
-                      {positionTypes.map(type => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
-                      ))}
-                    </select>
-                    
-                    <input
-                      type="text"
-                      placeholder="Beschreibung"
-                      value={position.beschreibung}
-                      onChange={(e) => updatePosition(index, 'beschreibung', e.target.value)}
-                      style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                    />
-                    
-                    <input
-                      type="number"
-                      placeholder="Menge"
-                      value={position.menge}
-                      onChange={(e) => updatePosition(index, 'menge', parseFloat(e.target.value) || 0)}
-                      style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                      min="0"
-                      step="0.01"
-                    />
-                    
-                    <input
-                      type="number"
-                      placeholder="Einzelpreis"
-                      value={position.einzelpreis}
-                      onChange={(e) => updatePosition(index, 'einzelpreis', parseFloat(e.target.value) || 0)}
-                      style={{ padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                      min="0"
-                      step="0.01"
-                    />
-                    
-                    <div style={{ padding: '8px', fontWeight: '500' }}>
-                      €{position.gesamtpreis.toFixed(2)}
-                    </div>
-                    
-                    <button
-                      onClick={() => removePosition(index)}
-                      style={{
-                        padding: '8px',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Rabatt und Totals */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '30px', marginBottom: '30px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Rabatt (%)</label>
-                <input
-                  type="number"
-                  value={offerForm.rabatt_prozent}
-                  onChange={(e) => setOfferForm(prev => ({ ...prev, rabatt_prozent: parseFloat(e.target.value) || 0 }))}
-                  style={{ width: '200px', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                />
-              </div>
-              
-              <div style={{
-                border: '1px solid #dee2e6',
-                borderRadius: '4px',
-                padding: '20px',
-                backgroundColor: '#f8f9fa'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span>Netto:</span>
-                  <span>€{netto.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span>MwSt. ({offerForm.mwst_prozent}%):</span>
-                  <span>€{mwstBetrag.toFixed(2)}</span>
-                </div>
-                <hr style={{ margin: '10px 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '18px' }}>
-                  <span>Brutto:</span>
-                  <span>€{brutto.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bemerkungen */}
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Bemerkungen</label>
-              <textarea
-                value={offerForm.bemerkungen}
-                onChange={(e) => setOfferForm(prev => ({ ...prev, bemerkungen: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #ced4da',
-                  borderRadius: '4px',
-                  minHeight: '80px',
-                  resize: 'vertical'
-                }}
-                placeholder="Zusätzliche Bemerkungen zum Angebot..."
-              />
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setActiveView('list')}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #6c757d',
-                  backgroundColor: 'transparent',
-                  color: '#6c757d',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Abbrechen
-              </button>
-              
-              <button
-                onClick={activeView === 'edit' ? updateOffer : saveOffer}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                {activeView === 'edit' ? 'Änderungen speichern' : 'Angebot speichern'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <InvoiceStyleForm
+        title="Neues Angebot"
+        formData={offerForm}
+        setFormData={setOfferForm}
+        clients={clients}
+        generateNumber={generateOfferNumber}
+        addPosition={addPosition}
+        updatePosition={updatePosition}
+        removePosition={removePosition}
+        calculateTotals={calculateTotals}
+        onSave={saveOffer}
+        onUpdate={updateOffer}
+        setActiveView={setActiveView}
+        activeView={activeView}
+      />
     );
   }
 

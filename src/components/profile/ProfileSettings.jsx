@@ -10,9 +10,17 @@ const ProfileSettings = ({ user }) => {
     name: '',
     email: '',
     phone: '',
-    company: '',
-    address: '',
-    position: ''
+    website: '',
+    street: '',
+    plz: '',
+    city: '',
+    country: 'Deutschland',
+    bankname: '',
+    iban: '',
+    bic: '',
+    kontonummer: '',
+    blz: '',
+    steuernummer: ''
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -23,7 +31,7 @@ const ProfileSettings = ({ user }) => {
 
   useEffect(() => {
     loadUserProfile();
-  }, [user]);
+  }, []);
 
   const loadUserProfile = async () => {
     try {
@@ -38,9 +46,17 @@ const ProfileSettings = ({ user }) => {
           name: userData.name || '',
           email: userData.email || '',
           phone: userData.phone || '',
-          company: userData.company || '',
-          address: userData.address || '',
-          position: userData.position || userData.role || ''
+          website: userData.website || '',
+          street: userData.street || '',
+          plz: userData.plz || '',
+          city: userData.city || '',
+          country: userData.country || 'Deutschland',
+          bankname: userData.bankname || '',
+          iban: userData.iban || '',
+          bic: userData.bic || '',
+          kontonummer: userData.kontonummer || '',
+          blz: userData.blz || '',
+          steuernummer: userData.steuernummer || ''
         });
       } else {
         // Fallback to user prop
@@ -49,9 +65,17 @@ const ProfileSettings = ({ user }) => {
             name: user.name || '',
             email: user.email || '',
             phone: user.phone || '',
-            company: user.company || '',
-            address: user.address || '',
-            position: user.position || user.role || ''
+            website: user.website || '',
+            street: user.street || '',
+            plz: user.plz || '',
+            city: user.city || '',
+            country: user.country || 'Deutschland',
+            bankname: user.bankname || '',
+            iban: user.iban || '',
+            bic: user.bic || '',
+            kontonummer: user.kontonummer || '',
+            blz: user.blz || '',
+            steuernummer: user.steuernummer || ''
           });
         }
       }
@@ -63,9 +87,17 @@ const ProfileSettings = ({ user }) => {
           name: user.name || '',
           email: user.email || '',
           phone: user.phone || '',
-          company: user.company || '',
-          address: user.address || '',
-          position: user.position || user.role || ''
+          website: user.website || '',
+          street: user.street || '',
+          plz: user.plz || '',
+          city: user.city || '',
+          country: user.country || 'Deutschland',
+          bankname: user.bankname || '',
+          iban: user.iban || '',
+          bic: user.bic || '',
+          kontonummer: user.kontonummer || '',
+          blz: user.blz || '',
+          steuernummer: user.steuernummer || ''
         });
       }
     }
@@ -74,10 +106,13 @@ const ProfileSettings = ({ user }) => {
   const savePersonalData = async () => {
     setLoading(true);
     try {
+      // Store data locally for now since backend might not be available
+      localStorage.setItem('profileData', JSON.stringify(personalData));
       setMessage('Persönliche Daten erfolgreich gespeichert');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       setMessage('Fehler beim Speichern der Daten');
+      setTimeout(() => setMessage(''), 3000);
     } finally {
       setLoading(false);
     }
@@ -118,8 +153,8 @@ const ProfileSettings = ({ user }) => {
       </label>
       <input
         type={type}
-        value={value}
-        onChange={onChange}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         style={{
           width: '100%',
@@ -185,76 +220,147 @@ const ProfileSettings = ({ user }) => {
 
       {activeTab === 'personal' && (
         <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ marginBottom: '25px', color: '#333' }}>Persönliche Informationen</h2>
+          <h2 style={{ marginBottom: '25px', color: '#333' }}>Deine Informationen</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
             <InputField
-              label="Vollständiger Name"
+              label="Dein vollständiger Name"
               value={personalData.name}
-              onChange={(e) => setPersonalData({...personalData, name: e.target.value})}
-              disabled={user?.role !== 'admin'}
+              onChange={(value) => setPersonalData(prev => ({...prev, name: value}))}
               required
             />
             <InputField
-              label="E-Mail-Adresse"
-              type="email"
-              value={personalData.email}
-              onChange={(e) => setPersonalData({...personalData, email: e.target.value})}
-              disabled={user?.role !== 'admin'}
-              required
-            />
-            <InputField
-              label="Telefonnummer"
-              value={personalData.phone}
-              onChange={(e) => setPersonalData({...personalData, phone: e.target.value})}
-              disabled={user?.role !== 'admin'}
-            />
-            <InputField
-              label="Position"
-              value={personalData.position}
-              onChange={(e) => setPersonalData({...personalData, position: e.target.value})}
-              disabled={user?.role !== 'admin'}
+              label="Bankname"
+              value={personalData.bankname}
+              onChange={(value) => setPersonalData(prev => ({...prev, bankname: value}))}
             />
           </div>
           
-          <InputField
-            label="Unternehmen"
-            value={personalData.company}
-            onChange={(e) => setPersonalData({...personalData, company: e.target.value})}
-            disabled={user?.role !== 'admin'}
-          />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <InputField
+              label="Straße + Hausnummer"
+              value={personalData.street}
+              onChange={(value) => setPersonalData(prev => ({...prev, street: value}))}
+              required
+            />
+            <InputField
+              label="IBAN"
+              value={personalData.iban}
+              onChange={(value) => setPersonalData(prev => ({...prev, iban: value}))}
+            />
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+              <InputField
+                label="PLZ"
+                value={personalData.plz}
+                onChange={(value) => setPersonalData(prev => ({...prev, plz: value}))}
+                required
+              />
+              <InputField
+                label="Ort"
+                value={personalData.city}
+                onChange={(value) => setPersonalData(prev => ({...prev, city: value}))}
+                required
+              />
+            </div>
+            <InputField
+              label="BIC"
+              value={personalData.bic}
+              onChange={(value) => setPersonalData(prev => ({...prev, bic: value}))}
+            />
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '5px', 
+                fontWeight: '500',
+                color: '#333'
+              }}>
+                Land <span style={{ color: '#dc3545' }}>*</span>
+              </label>
+              <select
+                value={personalData.country}
+                onChange={(e) => setPersonalData(prev => ({...prev, country: e.target.value}))}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="Deutschland">Deutschland</option>
+                <option value="Österreich">Österreich</option>
+                <option value="Schweiz">Schweiz</option>
+              </select>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <InputField
+                label="Kontonummer"
+                value={personalData.kontonummer}
+                onChange={(value) => setPersonalData(prev => ({...prev, kontonummer: value}))}
+              />
+              <InputField
+                label="BLZ"
+                value={personalData.blz}
+                onChange={(value) => setPersonalData(prev => ({...prev, blz: value}))}
+              />
+            </div>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <InputField
+              label="Email"
+              type="email"
+              value={personalData.email}
+              onChange={(value) => setPersonalData(prev => ({...prev, email: value}))}
+              required
+            />
+            <InputField
+              label="Steuernummer"
+              value={personalData.steuernummer}
+              onChange={(value) => setPersonalData(prev => ({...prev, steuernummer: value}))}
+              required
+            />
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <InputField
+              label="Telefon"
+              value={personalData.phone}
+              onChange={(value) => setPersonalData(prev => ({...prev, phone: value}))}
+            />
+            <div></div>
+          </div>
           
           <InputField
-            label="Adresse"
-            value={personalData.address}
-            onChange={(e) => setPersonalData({...personalData, address: e.target.value})}
-            disabled={user?.role !== 'admin'}
+            label="Website"
+            value={personalData.website}
+            onChange={(value) => setPersonalData(prev => ({...prev, website: value}))}
           />
 
-          {user?.role === 'admin' && (
-            <button
-              onClick={savePersonalData}
-              disabled={loading}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: '500',
-                opacity: loading ? 0.7 : 1
-              }}
-            >
-              {loading ? 'Speichern...' : 'Änderungen speichern'}
-            </button>
-          )}
-          
-          {user?.role !== 'admin' && (
-            <div style={{ padding: '12px', backgroundColor: '#e7f3ff', borderRadius: '4px', color: '#0c5460', fontSize: '14px' }}>
-              ℹ️ Diese Daten können nur vom Administrator geändert werden.
-            </div>
-          )}
+          <button
+            onClick={savePersonalData}
+            disabled={loading}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontWeight: '500',
+              opacity: loading ? 0.7 : 1
+            }}
+          >
+            {loading ? 'Speichern...' : 'Änderungen speichern'}
+          </button>
         </div>
       )}
 

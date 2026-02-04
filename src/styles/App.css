@@ -10,6 +10,7 @@ body {
   line-height: 1.6;
   color: #333;
   background-color: #f8f9fa;
+  font-size: 16px;
 }
 
 .container {
@@ -149,7 +150,7 @@ body {
   padding: 0.75rem;
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 16px;
   transition: border-color 0.15s ease-in-out;
 }
 
@@ -190,7 +191,7 @@ body {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease-in-out;

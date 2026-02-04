@@ -17,31 +17,73 @@ import CustomerOfferView from './components/customer/CustomerOfferView';
 import CustomerInvoiceView from './components/customer/CustomerInvoiceView';
 import CustomerServiceRequestsList from './components/customer/CustomerServiceRequestsList';
 import ProfileSettings from './components/profile/ProfileSettings.jsx';
+import { RecentRequests, QuickStats, RecentOffers, RecentInvoices } from './components/dashboard/DashboardWidgets';
+import { CustomerRecentRequests, CustomerQuickActions, CustomerRecentOffers, CustomerRecentInvoices } from './components/dashboard/CustomerDashboardWidgets';
 
-// Working Admin Dashboard without problematic imports
 const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
-  const [stats] = useState({
-    angebote: { total: 5, offen: 2 },
-    rechnungen: { total: 8, offen: 3, ueberfaellig: 1 },
-    umsatz: 12500.00
+  const [stats, setStats] = useState({
+    angebote: { total: 0, offen: 0 },
+    rechnungen: { total: 0, offen: 0, ueberfaellig: 0 },
+    anfragen: { total: 0, neu: 0 },
+    umsatz: 0
   });
 
-  const StatCard = ({ title, value, subtitle, color = '#007bff' }) => (
+  useEffect(() => {
+    const loadStats = () => {
+      const offers = JSON.parse(localStorage.getItem('admin_offers') || '[]');
+      const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]');
+      const requests = JSON.parse(localStorage.getItem('admin_service_requests') || '[]');
+      
+      setStats({
+        angebote: {
+          total: offers.length,
+          offen: offers.filter(o => o.status === 'entwurf' || o.status === 'versendet').length
+        },
+        rechnungen: {
+          total: invoices.length,
+          offen: invoices.filter(i => i.status === 'offen').length,
+          ueberfaellig: invoices.filter(i => i.status === 'ueberfaellig').length
+        },
+        anfragen: {
+          total: requests.length,
+          neu: requests.filter(r => r.status === 'neu').length
+        },
+        umsatz: invoices.filter(i => i.status === 'bezahlt').reduce((sum, i) => sum + (i.brutto || 0), 0)
+      });
+    };
+    
+    loadStats();
+    const interval = setInterval(loadStats, 5000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
+  const StatCard = ({ title, value, subtitle, color = '#007bff', trend }) => (
     <div style={{
       backgroundColor: 'white',
-      borderRadius: '8px',
-      padding: '20px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      borderLeft: `4px solid ${color}`
+      borderRadius: '12px',
+      padding: '24px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #e9ecef'
     }}>
-      <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '14px', fontWeight: '500' }}>
-        {title}
-      </h3>
-      <div style={{ fontSize: '24px', fontWeight: 'bold', color, marginBottom: '5px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+        <h3 style={{ margin: 0, color: '#6c757d', fontSize: '14px', fontWeight: '500' }}>
+          {title}
+        </h3>
+        {trend && (
+          <span style={{ 
+            color: trend.startsWith('+') ? '#28a745' : '#dc3545',
+            fontSize: '12px',
+            fontWeight: '600'
+          }}>
+            {trend}
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: '700', color, marginBottom: '8px' }}>
         {value}
       </div>
       {subtitle && (
-        <div style={{ fontSize: '12px', color: '#6c757d' }}>
+        <div style={{ fontSize: '13px', color: '#6c757d' }}>
           {subtitle}
         </div>
       )}
@@ -49,56 +91,48 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
   );
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px', maxWidth: 'calc(100vw - 270px)' }}>
+    <div style={{ marginLeft: '260px', marginTop: '60px', padding: '30px', maxWidth: 'calc(100vw - 260px)', background: '#f5f7fa', minHeight: 'calc(100vh - 60px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Admin Dashboard</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, Administrator</p>
       </div>
 
-      {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
             <StatCard 
               title="Angebote gesamt" 
               value={stats.angebote.total} 
               subtitle={`${stats.angebote.offen} offen`}
-              color="#28a745"
+              color="#667eea"
             />
             <StatCard 
               title="Rechnungen gesamt" 
               value={stats.rechnungen.total} 
               subtitle={`${stats.rechnungen.offen} offen`}
-              color="#ffc107"
+              color="#f093fb"
             />
             <StatCard 
-              title="Überfällige Rechnungen" 
-              value={stats.rechnungen.ueberfaellig} 
-              color="#dc3545"
+              title="Serviceanfragen" 
+              value={stats.anfragen.total}
+              subtitle={`${stats.anfragen.neu} neu`}
+              color="#4facfe"
             />
             <StatCard 
               title="Gesamtumsatz" 
               value={`€${stats.umsatz.toFixed(2)}`} 
-              color="#007bff"
+              color="#feca57"
             />
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <RecentRequests />
+            <QuickStats stats={stats} />
+          </div>
+          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ marginBottom: '15px' }}>Aktuelle Angebote</h3>
-              <div style={{ padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                <div style={{ fontWeight: '500' }}>ANG-2024-0001</div>
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>KUNDE_001</div>
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ marginBottom: '15px' }}>Offene Rechnungen</h3>
-              <div style={{ padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                <div style={{ fontWeight: '500' }}>RE-2024-0001</div>
-                <div style={{ fontSize: '14px', color: '#6c757d' }}>Fällig: 2024-02-15</div>
-              </div>
-            </div>
+            <RecentOffers />
+            <RecentInvoices />
           </div>
         </div>
       )}
@@ -158,50 +192,139 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
 
 // Working Customer Portal without problematic imports
 const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
+  const [stats, setStats] = useState({
+    anfragen: { total: 0, neu: 0, bearbeitet: 0 },
+    angebote: { total: 0, offen: 0 },
+    rechnungen: { total: 0, offen: 0, bezahlt: 0 },
+    gesamtkosten: 0
+  });
+
+  useEffect(() => {
+    const loadStats = () => {
+      const requests = JSON.parse(localStorage.getItem('pending_service_requests') || '[]')
+        .filter(r => r.kunden_id === user?.customer_id || r.kunden_id === user?.kunden_id);
+      const offers = JSON.parse(localStorage.getItem('admin_offers') || '[]')
+        .filter(o => o.kunden_id === user?.customer_id || o.kunden_id === user?.kunden_id);
+      const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]')
+        .filter(i => i.kunden_id === user?.customer_id || i.kunden_id === user?.kunden_id);
+      
+      setStats({
+        anfragen: {
+          total: requests.length,
+          neu: requests.filter(r => r.status === 'neu').length,
+          bearbeitet: requests.filter(r => r.status === 'bearbeitet').length
+        },
+        angebote: {
+          total: offers.length,
+          offen: offers.filter(o => o.status === 'versendet').length
+        },
+        rechnungen: {
+          total: invoices.length,
+          offen: invoices.filter(i => i.status === 'offen').length,
+          bezahlt: invoices.filter(i => i.status === 'bezahlt').length
+        },
+        gesamtkosten: invoices.reduce((sum, i) => sum + (i.brutto || 0), 0)
+      });
+    };
+    
+    loadStats();
+    const interval = setInterval(loadStats, 5000);
+    return () => clearInterval(interval);
+  }, [user, activeTab]);
+
+  const StatCard = ({ title, value, subtitle, color = '#007bff' }) => (
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      padding: '24px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #e9ecef'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+        <h3 style={{ margin: 0, color: '#6c757d', fontSize: '14px', fontWeight: '500' }}>
+          {title}
+        </h3>
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: '700', color, marginBottom: '8px' }}>
+        {value}
+      </div>
+      {subtitle && (
+        <div style={{ fontSize: '13px', color: '#6c757d' }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px', maxWidth: 'calc(100vw - 270px)' }}>
+    <div style={{ marginLeft: '260px', marginTop: '60px', padding: '30px', maxWidth: 'calc(100vw - 260px)', background: '#f5f7fa', minHeight: 'calc(100vh - 60px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenportal</h1>
         <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id}</p>
       </div>
 
-      {/* Content */}
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3>{activeTab === 'overview' ? 'Übersicht' : 
-             activeTab === 'service-requests' ? 'Serviceanfragen' :
-             activeTab === 'anlage-anlegen' ? 'Anlage anlegen' :
-             activeTab === 'angebote' ? 'Angebote' : 'Rechnungen'}</h3>
-        {activeTab === 'service-requests' && (
-          <div>
-            <CustomerServiceRequestsList user={user} />
-            <button onClick={() => {
-              window.location.href = '/customer/portal/service-request';
-            }} style={{
-              display: 'inline-block',
-              padding: '12px 24px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              marginTop: '20px',
-              cursor: 'pointer'
-            }}>
-              + Neue Serviceanfrage
-            </button>
+      {activeTab === 'overview' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+            <StatCard 
+              title="Serviceanfragen" 
+              value={stats.anfragen.total} 
+              subtitle={`${stats.anfragen.neu} neu, ${stats.anfragen.bearbeitet} in Bearbeitung`}
+              color="#667eea"
+            />
+            <StatCard 
+              title="Angebote" 
+              value={stats.angebote.total} 
+              subtitle={`${stats.angebote.offen} offen`}
+              color="#f093fb"
+            />
+            <StatCard 
+              title="Rechnungen" 
+              value={stats.rechnungen.total}
+              subtitle={`${stats.rechnungen.offen} offen, ${stats.rechnungen.bezahlt} bezahlt`}
+              color="#4facfe"
+            />
+            <StatCard 
+              title="Gesamtkosten" 
+              value={`€${stats.gesamtkosten.toFixed(2)}`} 
+              color="#feca57"
+            />
           </div>
-        )}
-        {activeTab === 'anlage-anlegen' && (
-          <AnlageAnlegen user={user} />
-        )}
-        {activeTab === 'angebote' && (
-          <CustomerOfferView user={user} />
-        )}
-        {activeTab === 'rechnungen' && (
-          <CustomerInvoiceView user={user} />
-        )}
-        {activeTab !== 'service-requests' && activeTab !== 'anlage-anlegen' && activeTab !== 'angebote' && activeTab !== 'rechnungen' && <p>Inhalte werden geladen...</p>}
-      </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <CustomerRecentRequests user={user} />
+            <CustomerQuickActions setActiveTab={setActiveTab} />
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <CustomerRecentOffers user={user} />
+            <CustomerRecentInvoices user={user} />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'service-requests' && (
+        <div>
+          <CustomerServiceRequestsList user={user} />
+          <button onClick={() => {
+            window.location.href = '/customer/portal/service-request';
+          }} style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            marginTop: '20px',
+            cursor: 'pointer'
+          }}>
+            + Neue Serviceanfrage
+          </button>
+        </div>
+      )}
+      {activeTab === 'anlage-anlegen' && <AnlageAnlegen user={user} />}
+      {activeTab === 'angebote' && <CustomerOfferView user={user} />}
+      {activeTab === 'rechnungen' && <CustomerInvoiceView user={user} />}
     </div>
   );
 };
@@ -341,26 +464,32 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
 const Sidebar = ({ user, activeTab, setActiveTab }) => {
   const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN_001';
   
+  const Icon = ({ d }) => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: '18px' }}>
+      <path d={d} />
+    </svg>
+  );
+  
   const adminMenuItems = [
-    { key: 'overview', label: 'Übersicht', path: '/admin/dashboard' },
-    { key: 'angebote', label: 'Angebote', path: '/admin/dashboard' },
-    { key: 'rechnungen', label: 'Rechnungen', path: '/admin/dashboard' },
-    { key: 'anfragen', label: 'Anfrage Übersicht', path: '/admin/dashboard' },
-    { key: 'kunden-anlegen', label: 'Kunden Anlegen', path: '/admin/dashboard' },
-    { key: 'kundenverwaltung', label: 'Kundenverwaltung', path: '/admin/dashboard' },
-    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/admin/dashboard' },
-    { key: 'wochenplan', label: 'Wochenplan', path: '/admin/dashboard' },
-    { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV', path: '/admin/dashboard' },
-    { key: 'arbeitsauftrag', label: 'Arbeitsauftrag', path: '/admin/dashboard' },
-    { key: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilung', path: '/admin/dashboard' }
+    { key: 'overview', label: 'Übersicht', path: '/admin/dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+    { key: 'angebote', label: 'Angebote', path: '/admin/dashboard', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' },
+    { key: 'rechnungen', label: 'Rechnungen', path: '/admin/dashboard', icon: 'M18 20V10 M12 20V4 M6 20v-6' },
+    { key: 'anfragen', label: 'Anfrage Übersicht', path: '/admin/dashboard', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+    { key: 'kunden-anlegen', label: 'Kunden Anlegen', path: '/admin/dashboard', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+    { key: 'kundenverwaltung', label: 'Kundenverwaltung', path: '/admin/dashboard', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/admin/dashboard', icon: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+    { key: 'wochenplan', label: 'Wochenplan', path: '/admin/dashboard', icon: 'M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+    { key: 'pruefprotokoll', label: 'Prüfprotokoll DGUV', path: '/admin/dashboard', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11 M14 2v6h6' },
+    { key: 'arbeitsauftrag', label: 'Arbeitsauftrag', path: '/admin/dashboard', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' },
+    { key: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilung', path: '/admin/dashboard', icon: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01' }
   ];
   
   const customerMenuItems = [
-    { key: 'overview', label: 'Übersicht', path: '/customer/dashboard' },
-    { key: 'service-requests', label: 'Serviceanfragen', path: '/customer/dashboard' },
-    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/customer/dashboard' },
-    { key: 'angebote', label: 'Angebote', path: '/customer/dashboard' },
-    { key: 'rechnungen', label: 'Rechnungen', path: '/customer/dashboard' }
+    { key: 'overview', label: 'Übersicht', path: '/customer/dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+    { key: 'service-requests', label: 'Serviceanfragen', path: '/customer/dashboard', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+    { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/customer/dashboard', icon: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+    { key: 'angebote', label: 'Angebote', path: '/customer/dashboard', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' },
+    { key: 'rechnungen', label: 'Rechnungen', path: '/customer/dashboard', icon: 'M18 20V10 M12 20V4 M6 20v-6' }
   ];
   
   const menuItems = isAdmin ? adminMenuItems : customerMenuItems;
@@ -374,14 +503,13 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
       height: '100vh',
       left: 0,
       top: '60px',
-      padding: '20px 0'
+      padding: '20px 0',
+      overflowY: 'auto'
     }}>
-      <h3 style={{ padding: '0 20px', margin: '0 0 20px 0' }}>
-        {isAdmin ? 'Heduschka' : 'Heduschka'}
-      </h3>
-      <p style={{ padding: '0 20px', margin: '0 0 20px 0', fontSize: '14px', color: '#bdc3c7' }}>
-        {isAdmin ? 'Adminportal' : 'Willkommen bei Kundenportal'}
-      </p>
+      <div style={{ padding: '0 20px', marginBottom: '30px' }}>
+        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: '600' }}>HEDUSCHKA</h3>
+        <p style={{ margin: 0, fontSize: '13px', color: '#95a5a6' }}>MENU</p>
+      </div>
       
       <nav>
         {menuItems.map(item => (
@@ -392,17 +520,19 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
             style={{
               display: 'flex',
               alignItems: 'center',
+              gap: '12px',
               width: '100%',
               padding: '12px 20px',
-              color: 'white',
+              color: activeTab === item.key ? '#fff' : '#95a5a6',
               textDecoration: 'none',
-              backgroundColor: activeTab === item.key ? 'rgba(0,123,255,0.2)' : 'transparent',
-              borderLeft: activeTab === item.key ? '3px solid #007bff' : '3px solid transparent',
+              backgroundColor: activeTab === item.key ? 'rgba(52, 152, 219, 0.15)' : 'transparent',
+              borderLeft: activeTab === item.key ? '3px solid #3498db' : '3px solid transparent',
               cursor: 'pointer',
               fontSize: '14px',
-              textAlign: 'left'
+              transition: 'all 0.2s'
             }}
           >
+            <Icon d={item.icon} />
             <span>{item.label}</span>
           </Link>
         ))}
