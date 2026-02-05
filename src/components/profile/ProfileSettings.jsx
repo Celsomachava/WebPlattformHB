@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
 
 const ProfileSettings = ({ user }) => {
+  const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN_001';
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -154,16 +155,16 @@ const ProfileSettings = ({ user }) => {
       <input
         type={type}
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
+        onChange={onChange}
+        disabled={disabled || !isAdmin}
         style={{
           width: '100%',
           padding: '10px',
           border: '1px solid #ddd',
           borderRadius: '4px',
           fontSize: '14px',
-          backgroundColor: disabled ? '#e9ecef' : 'white',
-          cursor: disabled ? 'not-allowed' : 'text'
+          backgroundColor: disabled || !isAdmin ? '#e9ecef' : 'white',
+          cursor: disabled || !isAdmin ? 'not-allowed' : 'text'
         }}
       />
     </div>
@@ -222,57 +223,63 @@ const ProfileSettings = ({ user }) => {
         <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h2 style={{ marginBottom: '25px', color: '#333' }}>Deine Informationen</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
             <InputField
               label="Dein vollständiger Name"
               value={personalData.name}
-              onChange={(value) => setPersonalData(prev => ({...prev, name: value}))}
+              onChange={(e) => setPersonalData(prev => ({...prev, name: e.target.value}))}
               required
             />
-            <InputField
-              label="Bankname"
-              value={personalData.bankname}
-              onChange={(value) => setPersonalData(prev => ({...prev, bankname: value}))}
-            />
+            {isAdmin && (
+              <InputField
+                label="Bankname"
+                value={personalData.bankname}
+                onChange={(e) => setPersonalData(prev => ({...prev, bankname: e.target.value}))}
+              />
+            )}
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
             <InputField
               label="Straße + Hausnummer"
               value={personalData.street}
-              onChange={(value) => setPersonalData(prev => ({...prev, street: value}))}
+              onChange={(e) => setPersonalData(prev => ({...prev, street: e.target.value}))}
               required
             />
-            <InputField
-              label="IBAN"
-              value={personalData.iban}
-              onChange={(value) => setPersonalData(prev => ({...prev, iban: value}))}
-            />
+            {isAdmin && (
+              <InputField
+                label="IBAN"
+                value={personalData.iban}
+                onChange={(e) => setPersonalData(prev => ({...prev, iban: e.target.value}))}
+              />
+            )}
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
               <InputField
                 label="PLZ"
                 value={personalData.plz}
-                onChange={(value) => setPersonalData(prev => ({...prev, plz: value}))}
+                onChange={(e) => setPersonalData(prev => ({...prev, plz: e.target.value}))}
                 required
               />
               <InputField
                 label="Ort"
                 value={personalData.city}
-                onChange={(value) => setPersonalData(prev => ({...prev, city: value}))}
+                onChange={(e) => setPersonalData(prev => ({...prev, city: e.target.value}))}
                 required
               />
             </div>
-            <InputField
-              label="BIC"
-              value={personalData.bic}
-              onChange={(value) => setPersonalData(prev => ({...prev, bic: value}))}
-            />
+            {isAdmin && (
+              <InputField
+                label="BIC"
+                value={personalData.bic}
+                onChange={(e) => setPersonalData(prev => ({...prev, bic: e.target.value}))}
+              />
+            )}
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ 
                 display: 'block', 
@@ -285,14 +292,15 @@ const ProfileSettings = ({ user }) => {
               <select
                 value={personalData.country}
                 onChange={(e) => setPersonalData(prev => ({...prev, country: e.target.value}))}
+                disabled={!isAdmin}
                 style={{
                   width: '100%',
                   padding: '10px',
                   border: '1px solid #ddd',
                   borderRadius: '4px',
                   fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
+                  backgroundColor: isAdmin ? 'white' : '#e9ecef',
+                  cursor: isAdmin ? 'pointer' : 'not-allowed'
                 }}
               >
                 <option value="Deutschland">Deutschland</option>
@@ -300,67 +308,72 @@ const ProfileSettings = ({ user }) => {
                 <option value="Schweiz">Schweiz</option>
               </select>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <InputField
-                label="Kontonummer"
-                value={personalData.kontonummer}
-                onChange={(value) => setPersonalData(prev => ({...prev, kontonummer: value}))}
-              />
-              <InputField
-                label="BLZ"
-                value={personalData.blz}
-                onChange={(value) => setPersonalData(prev => ({...prev, blz: value}))}
-              />
-            </div>
+            {isAdmin && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <InputField
+                  label="Kontonummer"
+                  value={personalData.kontonummer}
+                  onChange={(e) => setPersonalData(prev => ({...prev, kontonummer: e.target.value}))}
+                />
+                <InputField
+                  label="BLZ"
+                  value={personalData.blz}
+                  onChange={(e) => setPersonalData(prev => ({...prev, blz: e.target.value}))}
+                />
+              </div>
+            )}
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
             <InputField
               label="Email"
               type="email"
               value={personalData.email}
-              onChange={(value) => setPersonalData(prev => ({...prev, email: value}))}
+              onChange={(e) => setPersonalData(prev => ({...prev, email: e.target.value}))}
               required
             />
-            <InputField
-              label="Steuernummer"
-              value={personalData.steuernummer}
-              onChange={(value) => setPersonalData(prev => ({...prev, steuernummer: value}))}
-              required
-            />
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-            <InputField
-              label="Telefon"
-              value={personalData.phone}
-              onChange={(value) => setPersonalData(prev => ({...prev, phone: value}))}
-            />
-            <div></div>
+            {isAdmin && (
+              <InputField
+                label="Steuernummer"
+                value={personalData.steuernummer}
+                onChange={(e) => setPersonalData(prev => ({...prev, steuernummer: e.target.value}))}
+                required
+              />
+            )}
           </div>
           
           <InputField
-            label="Website"
-            value={personalData.website}
-            onChange={(value) => setPersonalData(prev => ({...prev, website: value}))}
+            label="Telefon"
+            value={personalData.phone}
+            onChange={(e) => setPersonalData(prev => ({...prev, phone: e.target.value}))}
           />
+          
+          {isAdmin && (
+            <InputField
+              label="Website"
+              value={personalData.website}
+              onChange={(e) => setPersonalData(prev => ({...prev, website: e.target.value}))}
+            />
+          )}
 
-          <button
-            onClick={savePersonalData}
-            disabled={loading}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              opacity: loading ? 0.7 : 1
-            }}
-          >
-            {loading ? 'Speichern...' : 'Änderungen speichern'}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={savePersonalData}
+              disabled={loading}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: '500',
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? 'Speichern...' : 'Änderungen speichern'}
+            </button>
+          )}
         </div>
       )}
 

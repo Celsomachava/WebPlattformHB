@@ -21,7 +21,11 @@ const AngebotForm = ({ angebotId, onSave, onCancel }) => {
     { value: 'pauschale', label: 'Pauschale' }
   ];
 
-  const addPosition = () => {
+  const addPosition = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const newPosition = {
       id: crypto.randomUUID(),
       type: 'artikel',
@@ -141,7 +145,15 @@ const AngebotForm = ({ angebotId, onSave, onCancel }) => {
               <h3>Positionen</h3>
               <button
                 type="button"
-                onClick={addPosition}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addPosition(e);
+                }}
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#28a745',
@@ -220,6 +232,21 @@ const AngebotForm = ({ angebotId, onSave, onCancel }) => {
                   >
                     ×
                   </button>
+                </div>
+                <div style={{ marginTop: '10px' }}>
+                  <textarea
+                    placeholder="Detaillierte Beschreibung (optional)"
+                    value={position.beschreibung_detail || ''}
+                    onChange={(e) => updatePosition(index, 'beschreibung_detail', e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px', 
+                      border: '1px solid #ced4da', 
+                      borderRadius: '4px',
+                      minHeight: '60px',
+                      resize: 'vertical'
+                    }}
+                  />
                 </div>
               </div>
             ))}
