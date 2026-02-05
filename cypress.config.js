@@ -1,1 +1,22 @@
-{\n  \"e2e\": {\n    \"baseUrl\": \"http://localhost:3000\",\n    \"viewportWidth\": 1280,\n    \"viewportHeight\": 720,\n    \"video\": false,\n    \"screenshotOnRunFailure\": true,\n    \"defaultCommandTimeout\": 10000,\n    \"requestTimeout\": 10000,\n    \"responseTimeout\": 10000,\n    \"supportFile\": \"cypress/support/e2e.js\",\n    \"specPattern\": \"cypress/e2e/**/*.cy.{js,jsx,ts,tsx}\"\n  },\n  \"component\": {\n    \"devServer\": {\n      \"framework\": \"react\",\n      \"bundler\": \"vite\"\n    }\n  }\n}
+const { defineConfig } = require('cypress')
+
+module.exports = defineConfig({
+  e2e: {
+    baseUrl: 'http://localhost:3001',
+    viewportWidth: 1280,
+    viewportHeight: 720,
+    video: false,
+    screenshotOnRunFailure: true,
+    defaultCommandTimeout: 10000,
+    requestTimeout: 10000,
+    responseTimeout: 10000,
+    supportFile: 'cypress/support/e2e.js',
+    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
+  },
+  component: {
+    devServer: {
+      framework: 'react',
+      bundler: 'vite'
+    }
+  }
+})

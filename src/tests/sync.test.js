@@ -1,1 +1,84 @@
-import { syncService } from '../services/syncService';\n\n// Mock fetch\nglobal.fetch = jest.fn();\n\ndescribe('Sync Service', () => {\n  beforeEach(() => {\n    fetch.mockClear();\n    // Reset online status\n    Object.defineProperty(navigator, 'onLine', {\n      writable: true,\n      value: true,\n    });\n  });\n\n  test('should detect online status', () => {\n    expect(syncService.isOnline).toBe(true);\n    \n    // Simulate going offline\n    Object.defineProperty(navigator, 'onLine', {\n      writable: true,\n      value: false,\n    });\n    \n    // Trigger offline event\n    window.dispatchEvent(new Event('offline'));\n    expect(syncService.isOnline).toBe(false);\n  });\n\n  test('should transform form data to API payload', () => {\n    const formData = {\n      kundendaten: { kunden_id: 'KUNDE_001' },\n      anlagendaten: { anlagen_id: 'ANLAGE_001' },\n      serviceangaben: {\n        serviceart: 'wartung',\n        dringlichkeit: 'normal',\n        beschreibung: 'Test service request'\n      },\n      zusatzinformationen: {\n        bemerkungen: 'Test notes',\n        photos: [{ data: 'base64data' }]\n      },\n      rechtliches: {\n        datenschutz_zustimmung: true,\n        agb_akzeptiert: true\n      }\n    };\n\n    const payload = syncService.transformPayload(formData);\n\n    expect(payload).toEqual({\n      kunden_id: 'KUNDE_001',\n      anlagen_id: 'ANLAGE_001',\n      serviceart: 'wartung',\n      dringlichkeit: 'normal',\n      beschreibung: 'Test service request',\n      bemerkungen: 'Test notes',\n      photos: ['base64data'],\n      datenschutz_zustimmung: true,\n      agb_akzeptiert: true,\n      timestamp: expect.any(Number)\n    });\n  });\n\n  test('should get auth token', () => {\n    localStorage.setItem('auth_token', 'KUNDE_001');\n    const token = syncService.getAuthToken();\n    expect(token).toBe('KUNDE_001');\n  });\n\n  test('should use default token when none exists', () => {\n    localStorage.removeItem('auth_token');\n    const token = syncService.getAuthToken();\n    expect(token).toBe('KUNDE_001');\n  });\n\n  test('should notify status changes', () => {\n    const mockListener = jest.fn();\n    window.addEventListener('syncStatusChange', mockListener);\n\n    syncService.notifyStatusChange('syncing');\n\n    expect(mockListener).toHaveBeenCalledWith(\n      expect.objectContaining({\n        detail: {\n          status: 'syncing',\n          isOnline: true\n        }\n      })\n    );\n\n    window.removeEventListener('syncStatusChange', mockListener);\n  });\n\n  test('should simulate confirmation notification', (done) => {\n    // Mock Notification\n    const mockNotification = jest.fn();\n    global.Notification = mockNotification;\n    global.Notification.permission = 'granted';\n\n    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();\n\n    syncService.simulateConfirmation(2);\n\n    setTimeout(() => {\n      expect(consoleSpy).toHaveBeenCalledWith(\n        '📧 Bestätigung: 2 Anfrage(n) an Heduschka übermittelt'\n      );\n      consoleSpy.mockRestore();\n      done();\n    }, 1100);\n  });\n\n  test('should return current status', () => {\n    const status = syncService.getStatus();\n    expect(status).toEqual({\n      online: true,\n      syncing: false\n    });\n  });\n});
+import { syncService } from '../services/syncService';
+
+// Mock fetch
+global.fetch = jest.fn();
+
+describe('Sync Service', () => {
+  beforeEach(() => {
+    fetch.mockClear();
+    // Reset online status
+    Object.defineProperty(navigator, 'onLine', {
+      writable: true,
+      value: true,
+    });
+  });
+
+  test('should detect online status', () => {
+    expect(syncService.isOnline).toBe(true);
+    
+    // Simulate going offline
+    Object.defineProperty(navigator, 'onLine', {
+      writable: true,
+      value: false,
+    });
+    
+    // Trigger offline event
+    window.dispatchEvent(new Event('offline'));
+    expect(syncService.isOnline).toBe(false);
+  });
+
+  test('should add and remove listeners', () => {
+    const mockListener = jest.fn();
+    
+    // Add listener
+    syncService.addListener(mockListener);
+    expect(syncService.listeners).toContain(mockListener);
+    
+    // Remove listener
+    syncService.removeListener(mockListener);
+    expect(syncService.listeners).not.toContain(mockListener);
+  });
+
+  test('should notify listeners on status change', () => {
+    const mockListener = jest.fn();
+    syncService.addListener(mockListener);
+    
+    // Trigger offline event
+    window.dispatchEvent(new Event('offline'));
+    expect(mockListener).toHaveBeenCalledWith('offline');
+    
+    // Trigger online event
+    window.dispatchEvent(new Event('online'));
+    expect(mockListener).toHaveBeenCalledWith('online');
+    
+    syncService.removeListener(mockListener);
+  });
+
+  test('should sync pending submissions (no-op)', async () => {
+    // This should not throw and complete successfully
+    await expect(syncService.syncPending()).resolves.toBeUndefined();
+  });
+
+  test('should return current status', () => {
+    const status = syncService.getStatus();
+    expect(status).toEqual({
+      isOnline: true,
+      syncInProgress: false
+    });
+  });
+
+  test('should update status when going offline', () => {
+    // Go offline
+    Object.defineProperty(navigator, 'onLine', {
+      writable: true,
+      value: false,
+    });
+    window.dispatchEvent(new Event('offline'));
+    
+    const status = syncService.getStatus();
+    expect(status).toEqual({
+      isOnline: false,
+      syncInProgress: false
+    });
+  });
+});

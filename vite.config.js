@@ -34,10 +34,10 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 3000,
+    port: 3001,
     host: '0.0.0.0',
     hmr: false,
-    strictPort: true
+    strictPort: false
   },
   preview: {
     port: 4173,

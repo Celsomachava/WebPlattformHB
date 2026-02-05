@@ -1,1 +1,88 @@
-import { optimizedDB } from '../services/optimizedDB';\n\ndescribe('OptimizedDB Service', () => {\n  beforeEach(async () => {\n    await optimizedDB.init();\n  });\n\n  afterEach(() => {\n    // Clean up IndexedDB\n    if (optimizedDB.db) {\n      optimizedDB.db.close();\n    }\n  });\n\n  test('should initialize database', async () => {\n    expect(optimizedDB.db).toBeTruthy();\n    expect(optimizedDB.db.name).toBe('heduschkaForms');\n  });\n\n  test('should save and retrieve pending submissions', async () => {\n    const testSubmission = {\n      formData: {\n        kundendaten: { kunden_id: 'TEST_001' },\n        serviceangaben: { beschreibung: 'Test submission' }\n      },\n      status: 'pending',\n      timestamp: Date.now()\n    };\n\n    // Save submission\n    const submissions = [testSubmission];\n    await optimizedDB.batchSave(submissions);\n\n    // Retrieve pending submissions\n    const pending = await optimizedDB.getPendingSubmissions();\n    expect(pending).toHaveLength(1);\n    expect(pending[0].formData.kundendaten.kunden_id).toBe('TEST_001');\n  });\n\n  test('should cache and retrieve API responses', async () => {\n    const testKey = 'test-api-response';\n    const testData = { result: 'success', timestamp: Date.now() };\n\n    // Cache response\n    await optimizedDB.cacheResponse(testKey, testData, 5000);\n\n    // Retrieve cached response\n    const cached = await optimizedDB.getCachedResponse(testKey);\n    expect(cached).toEqual(testData);\n  });\n\n  test('should return null for expired cache', async () => {\n    const testKey = 'expired-response';\n    const testData = { result: 'expired' };\n\n    // Cache with very short TTL\n    await optimizedDB.cacheResponse(testKey, testData, 1);\n\n    // Wait for expiration\n    await new Promise(resolve => setTimeout(resolve, 10));\n\n    const cached = await optimizedDB.getCachedResponse(testKey);\n    expect(cached).toBeNull();\n  });\n\n  test('should clean expired cache entries', async () => {\n    const expiredKey = 'expired-entry';\n    const validKey = 'valid-entry';\n\n    // Add expired entry\n    await optimizedDB.cacheResponse(expiredKey, { data: 'expired' }, 1);\n    // Add valid entry\n    await optimizedDB.cacheResponse(validKey, { data: 'valid' }, 10000);\n\n    // Wait for first entry to expire\n    await new Promise(resolve => setTimeout(resolve, 10));\n\n    // Clean expired entries\n    await optimizedDB.cleanExpiredCache();\n\n    // Check results\n    const expired = await optimizedDB.getCachedResponse(expiredKey);\n    const valid = await optimizedDB.getCachedResponse(validKey);\n\n    expect(expired).toBeNull();\n    expect(valid).toEqual({ data: 'valid' });\n  });\n});
+import { optimizedDB } from '../services/optimizedDB';
+
+describe('OptimizedDB Service', () => {
+  beforeEach(async () => {
+    await optimizedDB.init();
+  });
+
+  afterEach(() => {
+    // Clean up IndexedDB
+    if (optimizedDB.db) {
+      optimizedDB.db.close();
+    }
+  });
+
+  test('should initialize database', async () => {
+    expect(optimizedDB.db).toBeTruthy();
+    expect(optimizedDB.db.name).toBe('heduschkaForms');
+  });
+
+  test('should save and retrieve pending submissions', async () => {
+    const testSubmission = {
+      formData: {
+        kundendaten: { kunden_id: 'TEST_001' },
+        serviceangaben: { beschreibung: 'Test submission' }
+      },
+      status: 'pending',
+      timestamp: Date.now()
+    };
+
+    // Save submission
+    const submissions = [testSubmission];
+    await optimizedDB.batchSave(submissions);
+
+    // Retrieve pending submissions
+    const pending = await optimizedDB.getPendingSubmissions();
+    expect(pending).toHaveLength(1);
+    expect(pending[0].formData.kundendaten.kunden_id).toBe('TEST_001');
+  });
+
+  test('should cache and retrieve API responses', async () => {
+    const testKey = 'test-api-response';
+    const testData = { result: 'success', timestamp: Date.now() };
+
+    // Cache response
+    await optimizedDB.cacheResponse(testKey, testData, 5000);
+
+    // Retrieve cached response
+    const cached = await optimizedDB.getCachedResponse(testKey);
+    expect(cached).toEqual(testData);
+  });
+
+  test('should return null for expired cache', async () => {
+    const testKey = 'expired-response';
+    const testData = { result: 'expired' };
+
+    // Cache with very short TTL
+    await optimizedDB.cacheResponse(testKey, testData, 1);
+
+    // Wait for expiration
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const cached = await optimizedDB.getCachedResponse(testKey);
+    expect(cached).toBeNull();
+  });
+
+  test('should clean expired cache entries', async () => {
+    const expiredKey = 'expired-entry';
+    const validKey = 'valid-entry';
+
+    // Add expired entry
+    await optimizedDB.cacheResponse(expiredKey, { data: 'expired' }, 1);
+    // Add valid entry
+    await optimizedDB.cacheResponse(validKey, { data: 'valid' }, 10000);
+
+    // Wait for first entry to expire
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Clean expired entries
+    await optimizedDB.cleanExpiredCache();
+
+    // Check results
+    const expired = await optimizedDB.getCachedResponse(expiredKey);
+    const valid = await optimizedDB.getCachedResponse(validKey);
+
+    expect(expired).toBeNull();
+    expect(valid).toEqual({ data: 'valid' });
+  });
+});

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heduschka PWA - Manual Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .test-result { margin: 10px 0; padding: 10px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px 15px; }
+        #status { position: fixed; top: 10px; right: 10px; padding: 10px; background: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <div id="status">Online</div>
+    
+    <h1>🧪 Heduschka PWA - Manual Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>📴 Offline Functionality Tests</h2>
+        <button onclick="testOfflineMode()">Test Offline Mode</button>
+        <button onclick="testOnlineMode()">Test Online Mode</button>
+        <button onclick="testFormSubmission()">Test Form Submission</button>
+        <div id="offline-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💾 IndexedDB Tests</h2>
+        <button onclick="testIndexedDB()">Test Database</button>
+        <button onclick="testDataPersistence()">Test Data Persistence</button>
+        <div id="db-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔄 Sync Tests</h2>
+        <button onclick="testSyncService()">Test Sync Service</button>
+        <button onclick="testPendingSubmissions()">Test Pending Submissions</button>
+        <div id="sync-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 PWA Tests</h2>
+        <button onclick="testServiceWorker()">Test Service Worker</button>
+        <button onclick="testManifest()">Test PWA Manifest</button>
+        <div id="pwa-results"></div>
+    </div>
+
+    <script>
+        // Status indicator
+        function updateStatus() {
+            const status = document.getElementById('status');
+            status.textContent = navigator.onLine ? 'Online' : 'Offline';
+            status.style.background = navigator.onLine ? '#28a745' : '#dc3545';
+        }
+        
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        updateStatus();
+        
+        // Test utilities
+        function logResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            container.appendChild(div);
+        }
+        
+        // Offline Mode Tests
+        async function testOfflineMode() {
+            logResult('offline-results', '🧪 Testing offline mode simulation...', 'info');
+            
+            try {
+                // Simulate offline
+                Object.defineProperty(navigator, 'onLine', { writable: true, value: false });
+                window.dispatchEvent(new Event('offline'));
+                
+                logResult('offline-results', '✅ Successfully simulated offline mode', 'success');
+                logResult('offline-results', `📊 Navigator.onLine: ${navigator.onLine}`, 'info');
+                
+                setTimeout(() => {
+                    Object.defineProperty(navigator, 'onLine', { writable: true, value: true });
+                    window.dispatchEvent(new Event('online'));
+                    updateStatus();
+                }, 2000);
+                
+            } catch (error) {
+                logResult('offline-results', `❌ Offline test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testOnlineMode() {
+            logResult('offline-results', '🧪 Testing online mode...', 'info');
+            
+            try {
+                Object.defineProperty(navigator, 'onLine', { writable: true, value: true });
+                window.dispatchEvent(new Event('online'));
+                updateStatus();
+                
+                logResult('offline-results', '✅ Online mode restored', 'success');
+            } catch (error) {
+                logResult('offline-results', `❌ Online test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFormSubmission() {
+            logResult('offline-results', '🧪 Testing form submission simulation...', 'info');
+            
+            const testData = {
+                kundendaten: { kunden_id: 'TEST_001' },
+                serviceangaben: { beschreibung: 'Test offline submission' },
+                timestamp: Date.now()
+            };
+            
+            try {
+                // Simulate form submission
+                localStorage.setItem('test_submission', JSON.stringify(testData));
+                logResult('offline-results', '✅ Form data saved to localStorage', 'success');
+                
+                const saved = JSON.parse(localStorage.getItem('test_submission'));
+                if (saved.kundendaten.kunden_id === 'TEST_001') {
+                    logResult('offline-results', '✅ Form data retrieved successfully', 'success');
+                } else {
+                    logResult('offline-results', '❌ Form data retrieval failed', 'error');
+                }
+                
+            } catch (error) {
+                logResult('offline-results', `❌ Form submission test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // IndexedDB Tests
+        async function testIndexedDB() {
+            logResult('db-results', '🧪 Testing IndexedDB functionality...', 'info');
+            
+            try {
+                const request = indexedDB.open('testDB', 1);
+                
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('testStore')) {
+                        db.createObjectStore('testStore', { keyPath: 'id' });
+                    }
+                };
+                
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    logResult('db-results', '✅ IndexedDB opened successfully', 'success');
+                    
+                    // Test data insertion
+                    const transaction = db.transaction(['testStore'], 'readwrite');
+                    const store = transaction.objectStore('testStore');
+                    const testData = { id: 1, data: 'test', timestamp: Date.now() };
+                    
+                    const addRequest = store.add(testData);
+                    addRequest.onsuccess = function() {
+                        logResult('db-results', '✅ Data inserted into IndexedDB', 'success');
+                    };
+                    
+                    db.close();
+                };
+                
+                request.onerror = function() {
+                    logResult('db-results', '❌ IndexedDB test failed', 'error');
+                };
+                
+            } catch (error) {
+                logResult('db-results', `❌ IndexedDB test error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDataPersistence() {
+            logResult('db-results', '🧪 Testing data persistence...', 'info');
+            
+            try {
+                // Test localStorage persistence
+                const testKey = 'persistence_test';
+                const testValue = { timestamp: Date.now(), data: 'persistent' };
+                
+                localStorage.setItem(testKey, JSON.stringify(testValue));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                
+                if (retrieved && retrieved.data === 'persistent') {
+                    logResult('db-results', '✅ localStorage persistence working', 'success');
+                } else {
+                    logResult('db-results', '❌ localStorage persistence failed', 'error');
+                }
+                
+                localStorage.removeItem(testKey);
+                
+            } catch (error) {
+                logResult('db-results', `❌ Persistence test error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Sync Tests
+        async function testSyncService() {
+            logResult('sync-results', '🧪 Testing sync service...', 'info');
+            
+            try {
+                // Simulate sync service functionality
+                const syncStatus = {
+                    isOnline: navigator.onLine,
+                    syncInProgress: false,
+                    pendingCount: 0
+                };
+                
+                logResult('sync-results', `✅ Sync status: ${JSON.stringify(syncStatus)}`, 'success');
+                
+                // Test status change events
+                const originalOnline = navigator.onLine;
+                Object.defineProperty(navigator, 'onLine', { writable: true, value: false });
+                
+                logResult('sync-results', '📴 Simulated offline status', 'info');
+                
+                setTimeout(() => {
+                    Object.defineProperty(navigator, 'onLine', { writable: true, value: originalOnline });
+                    logResult('sync-results', '📶 Restored online status', 'info');
+                    updateStatus();
+                }, 1000);
+                
+            } catch (error) {
+                logResult('sync-results', `❌ Sync service test error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPendingSubmissions() {
+            logResult('sync-results', '🧪 Testing pending submissions...', 'info');
+            
+            try {
+                const pendingKey = 'pending_submissions';
+                const testSubmissions = [
+                    { id: 1, data: 'submission 1', timestamp: Date.now() },
+                    { id: 2, data: 'submission 2', timestamp: Date.now() + 1000 }
+                ];
+                
+                localStorage.setItem(pendingKey, JSON.stringify(testSubmissions));
+                const retrieved = JSON.parse(localStorage.getItem(pendingKey));
+                
+                if (retrieved && retrieved.length === 2) {
+                    logResult('sync-results', `✅ ${retrieved.length} pending submissions stored`, 'success');
+                } else {
+                    logResult('sync-results', '❌ Pending submissions test failed', 'error');
+                }
+                
+                localStorage.removeItem(pendingKey);
+                
+            } catch (error) {
+                logResult('sync-results', `❌ Pending submissions test error: ${error.message}`, 'error');
+            }
+        }
+        
+        // PWA Tests
+        async function testServiceWorker() {
+            logResult('pwa-results', '🧪 Testing Service Worker...', 'info');
+            
+            try {
+                if ('serviceWorker' in navigator) {
+                    logResult('pwa-results', '✅ Service Worker API available', 'success');
+                    
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    logResult('pwa-results', `📊 ${registrations.length} Service Worker(s) registered`, 'info');
+                    
+                    if (navigator.serviceWorker.controller) {
+                        logResult('pwa-results', '✅ Service Worker is controlling the page', 'success');
+                    } else {
+                        logResult('pwa-results', '⚠️ No Service Worker controlling the page', 'info');
+                    }
+                } else {
+                    logResult('pwa-results', '❌ Service Worker not supported', 'error');
+                }
+            } catch (error) {
+                logResult('pwa-results', `❌ Service Worker test error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testManifest() {
+            logResult('pwa-results', '🧪 Testing PWA Manifest...', 'info');
+            
+            try {
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    logResult('pwa-results', '✅ Manifest link found', 'success');
+                    
+                    const response = await fetch(manifestLink.href);
+                    const manifest = await response.json();
+                    
+                    logResult('pwa-results', `✅ Manifest loaded: ${manifest.name}`, 'success');
+                    logResult('pwa-results', `📊 Icons: ${manifest.icons?.length || 0}`, 'info');
+                } else {
+                    logResult('pwa-results', '❌ No manifest link found', 'error');
+                }
+            } catch (error) {
+                logResult('pwa-results', `❌ Manifest test error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            logResult('offline-results', '🚀 Manual test suite loaded', 'info');
+            logResult('db-results', '💾 Database tests ready', 'info');
+            logResult('sync-results', '🔄 Sync tests ready', 'info');
+            logResult('pwa-results', '📱 PWA tests ready', 'info');
+        });
+    </script>
+</body>
+</html>

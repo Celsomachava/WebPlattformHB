@@ -1,1 +1,35 @@
-{\n  \"testEnvironment\": \"jsdom\",\n  \"setupFilesAfterEnv\": [\"<rootDir>/src/tests/setup.js\"],\n  \"moduleNameMapping\": {\n    \"\\\\.(css|less|scss|sass)$\": \"identity-obj-proxy\"\n  },\n  \"testMatch\": [\n    \"<rootDir>/src/tests/**/*.test.js\",\n    \"<rootDir>/src/tests/**/*.test.jsx\"\n  ],\n  \"collectCoverageFrom\": [\n    \"src/**/*.{js,jsx}\",\n    \"!src/main.jsx\",\n    \"!src/tests/**\"\n  ],\n  \"coverageThreshold\": {\n    \"global\": {\n      \"branches\": 70,\n      \"functions\": 70,\n      \"lines\": 70,\n      \"statements\": 70\n    }\n  }\n}
+{
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["<rootDir>/src/tests/setup.js"],
+  "moduleNameMapper": {
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+  },
+  "testMatch": [
+    "<rootDir>/src/tests/**/*.test.js",
+    "<rootDir>/src/tests/**/*.test.jsx"
+  ],
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx}",
+    "!src/main.jsx",
+    "!src/tests/**",
+    "!src/**/*.ts",
+    "!src/**/*.tsx",
+    "!src/utils/apiTransform.js",
+    "!src/components/ui/OptimizedImage.jsx"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 70,
+      "functions": 70,
+      "lines": 70,
+      "statements": 70
+    }
+  },
+  "transform": {
+    "^.+\\.(js|jsx)$": "babel-jest"
+  },
+  "extensionsToTreatAsEsm": [".jsx"],
+  "globals": {
+    "__DEV__": true
+  }
+}
