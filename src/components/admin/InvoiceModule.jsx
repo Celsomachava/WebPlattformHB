@@ -45,8 +45,15 @@ const InvoiceModule = ({ user }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          setInvoices(data);
-          localStorage.setItem('admin_invoices', JSON.stringify(data));
+          const parsed = data.map(inv => ({
+            ...inv,
+            positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+            netto: parseFloat(inv.netto) || 0,
+            mwst_betrag: parseFloat(inv.mwst) || 0,
+            brutto: parseFloat(inv.brutto) || 0
+          }));
+          setInvoices(parsed);
+          localStorage.setItem('admin_invoices', JSON.stringify(parsed));
         }
       } catch (error) {
         const cached = localStorage.getItem('admin_invoices');
@@ -61,7 +68,14 @@ const InvoiceModule = ({ user }) => {
           allInvoices = [...allInvoices, ...uniquePending];
         }
         
-        setInvoices(allInvoices);
+        const parsed = allInvoices.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0
+        }));
+        setInvoices(parsed);
       }
     };
 
@@ -72,7 +86,14 @@ const InvoiceModule = ({ user }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          const uninvoiced = data.filter(offer => 
+          const parsed = data.map(o => ({
+            ...o,
+            positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+            netto: parseFloat(o.netto) || 0,
+            mwst_betrag: parseFloat(o.mwst) || 0,
+            brutto: parseFloat(o.brutto) || 0
+          }));
+          const uninvoiced = parsed.filter(offer => 
             !offer.invoiced && !invoices.some(inv => inv.angebot_id === offer.id)
           );
           setOffers(uninvoiced);
@@ -81,7 +102,13 @@ const InvoiceModule = ({ user }) => {
         const cached = localStorage.getItem('admin_offers');
         if (cached) {
           const allOffers = JSON.parse(cached);
-          const acceptedOffers = allOffers.filter(o => 
+          const acceptedOffers = allOffers.map(o => ({
+            ...o,
+            positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+            netto: parseFloat(o.netto) || 0,
+            mwst_betrag: parseFloat(o.mwst) || 0,
+            brutto: parseFloat(o.brutto) || 0
+          })).filter(o => 
             o.status === 'angenommen' && 
             !o.invoiced && 
             !invoices.some(inv => inv.angebot_id === o.id)
@@ -117,11 +144,81 @@ const InvoiceModule = ({ user }) => {
       await loadClients();
     };
 
-    // Debounce initial load
     timeoutId = setTimeout(loadAll, 100);
     
     return () => clearTimeout(timeoutId);
   }, []);
+
+  const loadInvoices = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/invoices`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const parsed = data.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0
+        }));
+        setInvoices(parsed);
+        localStorage.setItem('admin_invoices', JSON.stringify(parsed));
+      }
+    } catch (error) {
+      const cached = localStorage.getItem('admin_invoices');
+      if (cached) {
+        const parsed = JSON.parse(cached).map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0
+        }));
+        setInvoices(parsed);
+      }
+    }
+  };
+
+  const loadAcceptedOffers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/offers?status=angenommen`, {
+        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const parsed = data.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        }));
+        const uninvoiced = parsed.filter(offer => 
+          !offer.invoiced && !invoices.some(inv => inv.angebot_id === offer.id)
+        );
+        setOffers(uninvoiced);
+      }
+    } catch (error) {
+      const cached = localStorage.getItem('admin_offers');
+      if (cached) {
+        const allOffers = JSON.parse(cached);
+        const acceptedOffers = allOffers.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        })).filter(o => 
+          o.status === 'angenommen' && 
+          !o.invoiced && 
+          !invoices.some(inv => inv.angebot_id === o.id)
+        );
+        setOffers(acceptedOffers);
+      }
+    }
+  };
 
   const loadOffersByClient = async (kundenId) => {
     if (!kundenId) {
@@ -135,18 +232,30 @@ const InvoiceModule = ({ user }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        const validOffers = data.filter(offer => 
+        const parsed = data.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        }));
+        const validOffers = parsed.filter(offer => 
           (offer.status === 'angenommen' || offer.status === 'versendet') &&
           !invoices.some(inv => inv.angebot_id === offer.id)
         );
         setClientOffers(validOffers);
       }
     } catch (error) {
-      // Load from localStorage (offline-first)
       const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
-        const clientValidOffers = allOffers.filter(o => 
+        const clientValidOffers = allOffers.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        })).filter(o => 
           o.kunden_id === kundenId && 
           (o.status === 'angenommen' || o.status === 'versendet') && 
           !invoices.some(inv => inv.angebot_id === o.id)
@@ -158,8 +267,14 @@ const InvoiceModule = ({ user }) => {
 
   const generateInvoiceNumber = () => {
     const year = new Date().getFullYear();
-    const count = invoices.length + 1;
-    return `RE-${year}-${String(count).padStart(4, '0')}`;
+    const existingNumbers = invoices
+      .filter(inv => inv.nummer?.startsWith(`RE-${year}-`))
+      .map(inv => {
+        const match = inv.nummer.match(/RE-\d{4}-(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      });
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    return `RE-${year}-${String(maxNumber + 1).padStart(4, '0')}`;
   };
 
   const createInvoiceFromOffer = (offer) => {
