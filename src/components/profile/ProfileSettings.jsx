@@ -8,20 +8,11 @@ const ProfileSettings = ({ user }) => {
   const [message, setMessage] = useState('');
   
   const [personalData, setPersonalData] = useState({
+    kundennummer: '',
+    firmenname: '',
     name: '',
     email: '',
-    phone: '',
-    website: '',
-    street: '',
-    plz: '',
-    city: '',
-    country: 'Deutschland',
-    bankname: '',
-    iban: '',
-    bic: '',
-    kontonummer: '',
-    blz: '',
-    steuernummer: ''
+    phone: ''
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -36,87 +27,46 @@ const ProfileSettings = ({ user }) => {
 
   const loadUserProfile = async () => {
     try {
-      const token = await authService.getValidToken();
-      const response = await fetch('http://localhost:3001/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setPersonalData({
-          name: userData.name || '',
-          email: userData.email || '',
-          phone: userData.phone || '',
-          website: userData.website || '',
-          street: userData.street || '',
-          plz: userData.plz || '',
-          city: userData.city || '',
-          country: userData.country || 'Deutschland',
-          bankname: userData.bankname || '',
-          iban: userData.iban || '',
-          bic: userData.bic || '',
-          kontonummer: userData.kontonummer || '',
-          blz: userData.blz || '',
-          steuernummer: userData.steuernummer || ''
+      const kundenId = user?.kundennummer || user?.customer_id || user?.kunden_id;
+      if (kundenId) {
+        const response = await fetch(`http://localhost:3002/api/kunden/${kundenId}`, {
+          headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
         });
-      } else {
-        // Fallback to user prop
-        if (user) {
+        
+        if (response.ok) {
+          const userData = await response.json();
           setPersonalData({
-            name: user.name || '',
-            email: user.email || '',
-            phone: user.phone || '',
-            website: user.website || '',
-            street: user.street || '',
-            plz: user.plz || '',
-            city: user.city || '',
-            country: user.country || 'Deutschland',
-            bankname: user.bankname || '',
-            iban: user.iban || '',
-            bic: user.bic || '',
-            kontonummer: user.kontonummer || '',
-            blz: user.blz || '',
-            steuernummer: user.steuernummer || ''
+            name: userData.ansprechpartner || '',
+            email: userData.email || '',
+            phone: userData.telefon || '',
+            firmenname: userData.firmenname || '',
+            kundennummer: userData.kundennummer || kundenId
+          });
+        } else {
+          setPersonalData({
+            name: user?.ansprechpartner || user?.name || '',
+            email: user?.email || '',
+            phone: user?.telefon || user?.phone || '',
+            firmenname: user?.firmenname || '',
+            kundennummer: kundenId
           });
         }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      // Fallback to user prop
-      if (user) {
-        setPersonalData({
-          name: user.name || '',
-          email: user.email || '',
-          phone: user.phone || '',
-          website: user.website || '',
-          street: user.street || '',
-          plz: user.plz || '',
-          city: user.city || '',
-          country: user.country || 'Deutschland',
-          bankname: user.bankname || '',
-          iban: user.iban || '',
-          bic: user.bic || '',
-          kontonummer: user.kontonummer || '',
-          blz: user.blz || '',
-          steuernummer: user.steuernummer || ''
-        });
-      }
+      const kundenId = user?.kundennummer || user?.customer_id || user?.kunden_id;
+      setPersonalData({
+        name: user?.ansprechpartner || user?.name || '',
+        email: user?.email || '',
+        phone: user?.telefon || user?.phone || '',
+        firmenname: user?.firmenname || '',
+        kundennummer: kundenId
+      });
     }
   };
 
   const savePersonalData = async () => {
-    setLoading(true);
-    try {
-      // Store data locally for now since backend might not be available
-      localStorage.setItem('profileData', JSON.stringify(personalData));
-      setMessage('Persönliche Daten erfolgreich gespeichert');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Fehler beim Speichern der Daten');
-      setTimeout(() => setMessage(''), 3000);
-    } finally {
-      setLoading(false);
-    }
+    alert('Kontaktdaten können nur vom Administrator geändert werden');
   };
 
   const changePassword = async () => {
@@ -142,332 +92,154 @@ const ProfileSettings = ({ user }) => {
     }
   };
 
-  const InputField = ({ label, type = 'text', value, onChange, required = false, disabled = false }) => (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{ 
-        display: 'block', 
-        marginBottom: '5px', 
-        fontWeight: '500',
-        color: '#333'
-      }}>
-        {label} {required && <span style={{ color: '#dc3545' }}>*</span>}
-      </label>
-      <input
-        type={type}
-        value={value || ''}
-        onChange={onChange}
-        disabled={disabled || !isAdmin}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          fontSize: '14px',
-          backgroundColor: disabled || !isAdmin ? '#e9ecef' : 'white',
-          cursor: disabled || !isAdmin ? 'not-allowed' : 'text'
-        }}
-      />
-    </div>
-  );
-
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Profileinstellungen</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Verwalten Sie Ihre persönlichen Daten und Einstellungen</p>
-      </div>
-
-      {message && (
-        <div style={{
-          padding: '12px',
-          marginBottom: '20px',
-          borderRadius: '4px',
-          backgroundColor: message.includes('Fehler') ? '#f8d7da' : '#d4edda',
-          color: message.includes('Fehler') ? '#721c24' : '#155724',
-          border: `1px solid ${message.includes('Fehler') ? '#f5c6cb' : '#c3e6cb'}`
-        }}>
-          {message}
+    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '30px', background: '#f8f9fa', minHeight: 'calc(100vh - 60px)' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '30px' }}>
+          <h1 style={{ margin: '0 0 8px 0', color: '#2c3e50', fontSize: '28px', fontWeight: '600' }}>Profileinstellungen</h1>
+          <p style={{ color: '#6c757d', margin: 0, fontSize: '14px' }}>Verwalten Sie Ihre persönlichen Daten</p>
         </div>
-      )}
 
-      <div style={{ marginBottom: '30px', borderBottom: '1px solid #dee2e6' }}>
-        <div style={{ display: 'flex', gap: '0' }}>
-          {[
-            { key: 'personal', label: 'Persönliche Daten', icon: '👤' },
-            { key: 'security', label: 'Sicherheit', icon: '🔒' }
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '12px 24px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: activeTab === tab.key ? '#007bff' : '#6c757d',
-                borderBottom: activeTab === tab.key ? '2px solid #007bff' : '2px solid transparent',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab.key ? '500' : 'normal',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+        {message && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: '20px',
+            borderRadius: '6px',
+            background: message.includes('Fehler') ? '#fee' : '#d4edda',
+            color: message.includes('Fehler') ? '#c00' : '#155724',
+            fontSize: '14px'
+          }}>
+            {message}
+          </div>
+        )}
 
-      {activeTab === 'personal' && (
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ marginBottom: '25px', color: '#333' }}>Deine Informationen</h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-            <InputField
-              label="Dein vollständiger Name"
-              value={personalData.name}
-              onChange={(e) => setPersonalData(prev => ({...prev, name: e.target.value}))}
-              required
-            />
-            {isAdmin && (
-              <InputField
-                label="Bankname"
-                value={personalData.bankname}
-                onChange={(e) => setPersonalData(prev => ({...prev, bankname: e.target.value}))}
-              />
-            )}
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-            <InputField
-              label="Straße + Hausnummer"
-              value={personalData.street}
-              onChange={(e) => setPersonalData(prev => ({...prev, street: e.target.value}))}
-              required
-            />
-            {isAdmin && (
-              <InputField
-                label="IBAN"
-                value={personalData.iban}
-                onChange={(e) => setPersonalData(prev => ({...prev, iban: e.target.value}))}
-              />
-            )}
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
-              <InputField
-                label="PLZ"
-                value={personalData.plz}
-                onChange={(e) => setPersonalData(prev => ({...prev, plz: e.target.value}))}
-                required
-              />
-              <InputField
-                label="Ort"
-                value={personalData.city}
-                onChange={(e) => setPersonalData(prev => ({...prev, city: e.target.value}))}
-                required
-              />
-            </div>
-            {isAdmin && (
-              <InputField
-                label="BIC"
-                value={personalData.bic}
-                onChange={(e) => setPersonalData(prev => ({...prev, bic: e.target.value}))}
-              />
-            )}
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontWeight: '500',
-                color: '#333'
-              }}>
-                Land <span style={{ color: '#dc3545' }}>*</span>
-              </label>
-              <select
-                value={personalData.country}
-                onChange={(e) => setPersonalData(prev => ({...prev, country: e.target.value}))}
-                disabled={!isAdmin}
+        <div style={{ background: 'white', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid #e9ecef' }}>
+            {[
+              { key: 'personal', label: 'Persönliche Daten' },
+              { key: 'security', label: 'Sicherheit' }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  backgroundColor: isAdmin ? 'white' : '#e9ecef',
-                  cursor: isAdmin ? 'pointer' : 'not-allowed'
+                  padding: '16px 24px',
+                  border: 'none',
+                  background: activeTab === tab.key ? 'white' : 'transparent',
+                  color: activeTab === tab.key ? '#007bff' : '#6c757d',
+                  borderBottom: activeTab === tab.key ? '2px solid #007bff' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === tab.key ? '600' : '400',
+                  fontSize: '14px'
                 }}
               >
-                <option value="Deutschland">Deutschland</option>
-                <option value="Österreich">Österreich</option>
-                <option value="Schweiz">Schweiz</option>
-              </select>
-            </div>
-            {isAdmin && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <InputField
-                  label="Kontonummer"
-                  value={personalData.kontonummer}
-                  onChange={(e) => setPersonalData(prev => ({...prev, kontonummer: e.target.value}))}
-                />
-                <InputField
-                  label="BLZ"
-                  value={personalData.blz}
-                  onChange={(e) => setPersonalData(prev => ({...prev, blz: e.target.value}))}
-                />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ padding: '30px' }}>
+            {activeTab === 'personal' && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '15px', borderBottom: '2px solid #e9ecef' }}>
+                  <span style={{ fontSize: '24px', color: '#007bff' }}>👤</span>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>Dados do Cliente</h3>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 40px' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '6px', fontWeight: '500' }}>Kunden-ID</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50' }}>{personalData.kundennummer || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '6px', fontWeight: '500' }}>Firmenname</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50' }}>{personalData.firmenname || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '6px', fontWeight: '500' }}>Ansprechpartner</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50' }}>{personalData.name || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '6px', fontWeight: '500' }}>Email</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50' }}>{personalData.email || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '6px', fontWeight: '500' }}>Telefon</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50' }}>{personalData.phone || '-'}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'security' && (
+              <div style={{ maxWidth: '400px' }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#495057' }}>Aktuelles Passwort</label>
+                  <input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, currentPassword: e.target.value}))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#495057' }}>Neues Passwort</label>
+                  <input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, newPassword: e.target.value}))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '30px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#495057' }}>Passwort bestätigen</label>
+                  <input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, confirmPassword: e.target.value}))}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={changePassword}
+                  disabled={loading || !passwordData.currentPassword || !passwordData.newPassword}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: loading || !passwordData.currentPassword || !passwordData.newPassword ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    opacity: loading || !passwordData.currentPassword || !passwordData.newPassword ? 0.6 : 1
+                  }}
+                >
+                  {loading ? 'Ändern...' : 'Passwort ändern'}
+                </button>
               </div>
             )}
           </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-            <InputField
-              label="Email"
-              type="email"
-              value={personalData.email}
-              onChange={(e) => setPersonalData(prev => ({...prev, email: e.target.value}))}
-              required
-            />
-            {isAdmin && (
-              <InputField
-                label="Steuernummer"
-                value={personalData.steuernummer}
-                onChange={(e) => setPersonalData(prev => ({...prev, steuernummer: e.target.value}))}
-                required
-              />
-            )}
-          </div>
-          
-          <InputField
-            label="Telefon"
-            value={personalData.phone}
-            onChange={(e) => setPersonalData(prev => ({...prev, phone: e.target.value}))}
-          />
-          
-          {isAdmin && (
-            <InputField
-              label="Website"
-              value={personalData.website}
-              onChange={(e) => setPersonalData(prev => ({...prev, website: e.target.value}))}
-            />
-          )}
-
-          {isAdmin && (
-            <button
-              onClick={savePersonalData}
-              disabled={loading}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: '500',
-                opacity: loading ? 0.7 : 1
-              }}
-            >
-              {loading ? 'Speichern...' : 'Änderungen speichern'}
-            </button>
-          )}
         </div>
-      )}
-
-      {activeTab === 'security' && (
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ marginBottom: '25px', color: '#333' }}>Passwort ändern</h2>
-          
-          <div style={{ maxWidth: '400px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontWeight: '500',
-                color: '#333'
-              }}>
-                Aktuelles Passwort <span style={{ color: '#dc3545' }}>*</span>
-              </label>
-              <input
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData(prev => ({...prev, currentPassword: e.target.value}))}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontWeight: '500',
-                color: '#333'
-              }}>
-                Neues Passwort <span style={{ color: '#dc3545' }}>*</span>
-              </label>
-              <input
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData(prev => ({...prev, newPassword: e.target.value}))}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontWeight: '500',
-                color: '#333'
-              }}>
-                Neues Passwort bestätigen <span style={{ color: '#dc3545' }}>*</span>
-              </label>
-              <input
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData(prev => ({...prev, confirmPassword: e.target.value}))}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={changePassword}
-            disabled={loading || !passwordData.currentPassword || !passwordData.newPassword}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading || !passwordData.currentPassword || !passwordData.newPassword ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              opacity: loading || !passwordData.currentPassword || !passwordData.newPassword ? 0.7 : 1
-            }}
-          >
-            {loading ? 'Ändern...' : 'Passwort ändern'}
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
