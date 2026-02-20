@@ -16,13 +16,30 @@ const CustomerInvoiceView = ({ user }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data);
+        const parsed = data.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+        }));
+        setInvoices(parsed);
       }
     } catch (error) {
       const cached = localStorage.getItem('admin_invoices');
       if (cached) {
         const allInvoices = JSON.parse(cached);
-        setInvoices(allInvoices.filter(inv => inv.kunden_id === (user?.customer_id || user?.kunden_id)));
+        const filtered = allInvoices.filter(inv => inv.kunden_id === (user?.customer_id || user?.kunden_id));
+        const parsed = filtered.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+        }));
+        setInvoices(parsed);
       }
     } finally {
       setLoading(false);
