@@ -231,4 +231,4 @@ Bei Fragen oder Problemen:
 
 ---
 
-**© 2024 Heduschka GmbH** • 🛡️ DSGVO-konform • 🔐 SSL-verschlüsselt
+**© 2026 Heduschka GmbH** • 🛡️ DSGVO-konform • 🔐 SSL-verschlüsselt
