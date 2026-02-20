@@ -75,7 +75,7 @@ const KundenAnlegen = ({ user }) => {
 
       if (response.ok) {
         const newCustomer = await response.json();
-        setMessage('Kunde wurde erfolgreich angelegt!');
+        alert('Kunde erfolgreich angelegt.');
         setCustomerForm({
           kundennummer: '',
           firmenname: '',
@@ -118,7 +118,7 @@ const KundenAnlegen = ({ user }) => {
       pending.push(offlineCustomer);
       localStorage.setItem('pending_customers', JSON.stringify(pending));
       
-      setMessage('Kunde wurde offline gespeichert und wird bei Internetverbindung übertragen.');
+      alert('Kunde wurde offline gespeichert und wird bei Internetverbindung übertragen.');
       setCustomerForm({
         kundennummer: '',
         firmenname: '',

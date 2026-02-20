@@ -306,7 +306,7 @@ const OfferModule = ({ user }) => {
       cachedOffers.push(offlineOffer);
       localStorage.setItem('admin_offers', JSON.stringify(cachedOffers));
       
-      alert('Angebot wurde offline gespeichert und wird bei Internetverbindung übertragen.');
+      alert('Angebot wurde offline gespeichert.');
       loadOffers();
       setActiveView('list');
       resetForm();
