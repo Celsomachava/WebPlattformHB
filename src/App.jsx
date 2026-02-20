@@ -29,32 +29,57 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
   });
 
   useEffect(() => {
-    const loadStats = () => {
-      const offers = JSON.parse(localStorage.getItem('admin_offers') || '[]');
-      const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]');
-      const requests = JSON.parse(localStorage.getItem('admin_service_requests') || '[]');
-      
-      setStats({
-        angebote: {
-          total: offers.length,
-          offen: offers.filter(o => o.status === 'entwurf' || o.status === 'versendet').length
-        },
-        rechnungen: {
-          total: invoices.length,
-          offen: invoices.filter(i => i.status === 'offen').length,
-          ueberfaellig: invoices.filter(i => i.status === 'ueberfaellig').length
-        },
-        anfragen: {
-          total: requests.length,
-          neu: requests.filter(r => r.status === 'neu').length
-        },
-        umsatz: invoices.filter(i => i.status === 'bezahlt').reduce((sum, i) => sum + (i.brutto || 0), 0)
-      });
+    let timeoutId;
+    const loadStats = async () => {
+      try {
+        const token = localStorage.getItem('heduschka_token');
+        
+        // Load service requests
+        const reqRes = await fetch('http://localhost:3002/api/serviceanfragen', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const requests = reqRes.ok ? await reqRes.json() : [];
+        
+        // Load offers
+        const offRes = await fetch('http://localhost:3002/api/angebote', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const offers = offRes.ok ? await offRes.json() : [];
+        
+        // Load invoices
+        const invRes = await fetch('http://localhost:3002/api/rechnungen', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const invoices = invRes.ok ? await invRes.json() : [];
+        
+        setStats({
+          angebote: { 
+            total: offers.length, 
+            offen: offers.filter(o => o.status === 'offen').length 
+          },
+          rechnungen: { 
+            total: invoices.length, 
+            offen: invoices.filter(i => i.status === 'offen').length,
+            ueberfaellig: invoices.filter(i => i.status === 'ueberfaellig').length
+          },
+          anfragen: { 
+            total: requests.length, 
+            neu: requests.filter(r => r.status === 'neu').length 
+          },
+          umsatz: invoices.filter(i => i.status === 'bezahlt').reduce((sum, i) => sum + (parseFloat(i.gesamtbetrag) || 0), 0)
+        });
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
     };
     
-    loadStats();
-    const interval = setInterval(loadStats, 5000);
-    return () => clearInterval(interval);
+    timeoutId = setTimeout(loadStats, 200);
+    const interval = setInterval(loadStats, 30000);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
   }, [activeTab]);
 
   const StatCard = ({ title, value, subtitle, color = '#007bff', trend }) => (
@@ -200,36 +225,64 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
   });
 
   useEffect(() => {
-    const loadStats = () => {
-      const requests = JSON.parse(localStorage.getItem('pending_service_requests') || '[]')
-        .filter(r => r.kunden_id === user?.customer_id || r.kunden_id === user?.kunden_id);
-      const offers = JSON.parse(localStorage.getItem('admin_offers') || '[]')
-        .filter(o => o.kunden_id === user?.customer_id || o.kunden_id === user?.kunden_id);
-      const invoices = JSON.parse(localStorage.getItem('admin_invoices') || '[]')
-        .filter(i => i.kunden_id === user?.customer_id || i.kunden_id === user?.kunden_id);
+    let timeoutId;
+    const loadStats = async () => {
+      const userId = user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id;
+      if (!userId) return;
       
-      setStats({
-        anfragen: {
-          total: requests.length,
-          neu: requests.filter(r => r.status === 'neu').length,
-          bearbeitet: requests.filter(r => r.status === 'bearbeitet').length
-        },
-        angebote: {
-          total: offers.length,
-          offen: offers.filter(o => o.status === 'versendet').length
-        },
-        rechnungen: {
-          total: invoices.length,
-          offen: invoices.filter(i => i.status === 'offen').length,
-          bezahlt: invoices.filter(i => i.status === 'bezahlt').length
-        },
-        gesamtkosten: invoices.reduce((sum, i) => sum + (i.brutto || 0), 0)
-      });
+      try {
+        const token = localStorage.getItem('heduschka_token');
+        
+        // Load service requests
+        const reqRes = await fetch('http://localhost:3002/api/serviceanfragen', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const allRequests = reqRes.ok ? await reqRes.json() : [];
+        const requests = allRequests.filter(r => r.kunden_id === userId || r.kundennummer === userId);
+        
+        // Load offers
+        const offRes = await fetch('http://localhost:3002/api/angebote', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const allOffers = offRes.ok ? await offRes.json() : [];
+        const offers = allOffers.filter(o => o.kunden_id === userId || o.kundennummer === userId);
+        
+        // Load invoices
+        const invRes = await fetch('http://localhost:3002/api/rechnungen', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const allInvoices = invRes.ok ? await invRes.json() : [];
+        const invoices = allInvoices.filter(i => i.kunden_id === userId || i.kundennummer === userId);
+        
+        setStats({
+          anfragen: { 
+            total: requests.length, 
+            neu: requests.filter(r => r.status === 'neu').length,
+            bearbeitet: requests.filter(r => r.status === 'bearbeitet').length
+          },
+          angebote: { 
+            total: offers.length, 
+            offen: offers.filter(o => o.status === 'offen').length 
+          },
+          rechnungen: { 
+            total: invoices.length, 
+            offen: invoices.filter(i => i.status === 'offen').length,
+            bezahlt: invoices.filter(i => i.status === 'bezahlt').length
+          },
+          gesamtkosten: invoices.reduce((sum, i) => sum + (parseFloat(i.gesamtbetrag) || 0), 0)
+        });
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
     };
     
-    loadStats();
-    const interval = setInterval(loadStats, 5000);
-    return () => clearInterval(interval);
+    timeoutId = setTimeout(loadStats, 300);
+    const interval = setInterval(loadStats, 30000);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
   }, [user, activeTab]);
 
   const StatCard = ({ title, value, subtitle, color = '#007bff' }) => (
@@ -260,7 +313,7 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
     <div style={{ marginLeft: '260px', marginTop: '60px', padding: '30px', maxWidth: 'calc(100vw - 260px)', background: '#f5f7fa', minHeight: 'calc(100vh - 60px)' }}>
       <div style={{ marginBottom: '30px' }}>
         <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenportal</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id}</p>
+        <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.id || user?.name}</p>
       </div>
 
       {activeTab === 'overview' && (
@@ -379,7 +432,7 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
             gap: '8px'
           }}
         >
-          {user?.name || 'Benutzer'} ({user?.role === 'admin' || user?.role === 'ADMIN_001' ? 'Admin' : 'Kunde'})
+          {user?.name || 'Benutzer'} ({user?.role === 'admin' || user?.id === 'ADMIN_001' ? 'Admin' : 'Kunde'})
           <span style={{ fontSize: '12px' }}>▼</span>
         </button>
         
@@ -462,7 +515,7 @@ const TopBar = ({ user, onLogout, onShowProfile }) => {
 };
 
 const Sidebar = ({ user, activeTab, setActiveTab }) => {
-  const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN_001';
+  const isAdmin = user?.role === 'admin' || user?.id === 'ADMIN_001';
   
   const Icon = ({ d }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: '18px' }}>
@@ -475,7 +528,6 @@ const Sidebar = ({ user, activeTab, setActiveTab }) => {
     { key: 'angebote', label: 'Angebote', path: '/admin/dashboard', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8' },
     { key: 'rechnungen', label: 'Rechnungen', path: '/admin/dashboard', icon: 'M18 20V10 M12 20V4 M6 20v-6' },
     { key: 'anfragen', label: 'Anfrage Übersicht', path: '/admin/dashboard', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-    { key: 'kunden-anlegen', label: 'Kunden Anlegen', path: '/admin/dashboard', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
     { key: 'kundenverwaltung', label: 'Kundenverwaltung', path: '/admin/dashboard', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
     { key: 'anlage-anlegen', label: 'Anlage anlegen', path: '/admin/dashboard', icon: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
     { key: 'wochenplan', label: 'Wochenplan', path: '/admin/dashboard', icon: 'M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
@@ -631,19 +683,26 @@ const LoginComponent = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
+    if (!customerId || !password) {
+      setError('Bitte geben Sie Benutzername und Passwort ein');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      const success = await onLogin(customerId);
+      const success = await onLogin(customerId, password);
       if (!success) {
-        setError('Anmeldung fehlgeschlagen');
+        setError('Ungültige Anmeldedaten');
       }
     } catch (error) {
-      setError('Verbindungsfehler - Offline-Modus aktiv');
+      setError('Anmeldung fehlgeschlagen: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -702,7 +761,7 @@ const LoginComponent = ({ onLogin }) => {
               type="text"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              placeholder="Zugangs-Token"
+              placeholder="Kundennummer (z.B. KUNDE_001)"
               style={{
                 width: '100%',
                 padding: '15px 15px 15px 50px',
@@ -735,13 +794,13 @@ const LoginComponent = ({ onLogin }) => {
               </svg>
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Passwort"
               style={{
                 width: '100%',
-                padding: '15px 15px 15px 50px',
+                padding: '15px 50px 15px 50px',
                 border: '2px solid #e0e0e0',
                 borderRadius: '10px',
                 fontSize: '16px',
@@ -754,6 +813,35 @@ const LoginComponent = ({ onLogin }) => {
               required
               disabled={isLoading}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '15px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#667eea',
+                padding: '0',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              )}
+            </button>
           </div>
 
           {error && (
@@ -792,55 +880,55 @@ const LoginComponent = ({ onLogin }) => {
           </button>
         </form>
 
-        <div style={{
-          marginTop: '30px',
-          padding: '15px',
-          background: '#f0f4ff',
-          borderRadius: '10px',
-          fontSize: '12px',
-          color: '#667eea',
-          textAlign: 'left'
-        }}>
-          <strong>Demo-Anmeldung:</strong><br />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setCustomerId('KUNDE_001');
-                setPassword('demo123');
-              }}
-              style={{
-                padding: '8px 12px',
-                background: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
-            >
-              Kunde Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCustomerId('ADMIN_001');
-                setPassword('admin123');
-              }}
-              style={{
-                padding: '8px 12px',
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
-            >
-              Admin Demo
-            </button>
+          <div style={{
+            marginTop: '30px',
+            padding: '15px',
+            background: '#f0f4ff',
+            borderRadius: '10px',
+            fontSize: '12px',
+            color: '#667eea',
+            textAlign: 'left'
+          }}>
+            <strong>Demo-Anmeldung:</strong><br />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerId('KUNDE_001');
+                  setPassword('demo123');
+                }}
+                style={{
+                  padding: '8px 12px',
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  cursor: 'pointer'
+                }}
+              >
+                Kunde Demo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerId('ADMIN_001');
+                  setPassword('admin123');
+                }}
+                style={{
+                  padding: '8px 12px',
+                  background: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  cursor: 'pointer'
+                }}
+              >
+                Admin Demo
+              </button>
+            </div>
           </div>
-        </div>
       </div>
     </div>
   );
@@ -857,11 +945,13 @@ function App() {
     const initAuth = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
-        if (mounted) {
+        if (mounted && currentUser) {
           setUser(currentUser);
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
+        // Clear invalid token
+        localStorage.removeItem('heduschka_token');
       } finally {
         if (mounted) {
           setLoading(false);
@@ -872,9 +962,9 @@ function App() {
     return () => { mounted = false; };
   }, []);
 
-  const login = async (customerId) => {
+  const login = async (customerId, password) => {
     try {
-      await authService.login(customerId);
+      await authService.login(customerId, password);
       const user = await authService.getCurrentUser();
       setUser(user);
       return true;
@@ -884,14 +974,10 @@ function App() {
     }
   };
 
-  const logout = async () => {
-    try {
-      await authService.logout();
-      setUser(null);
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const logout = () => {
+    authService.logout();
+    setUser(null);
+    setActiveTab('overview');
   };
 
   if (loading) {
@@ -921,35 +1007,23 @@ function App() {
         
         <Routes>
           <Route path="/" element={
-            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
-            <Navigate to="/admin/dashboard" replace /> : 
-            <Navigate to="/customer/dashboard" replace />
+            <Navigate to={user?.role === 'admin' || user?.id === 'ADMIN_001' ? '/admin/dashboard' : '/customer/dashboard'} replace />
           } />
           
           <Route path="/admin/dashboard" element={
-            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
+            user?.role === 'admin' || user?.id === 'ADMIN_001' ? 
             <AdminDashboard user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
             <Navigate to="/customer/dashboard" replace />
           } />
           
-          <Route path="/admin/*" element={
-            user?.role === 'admin' || user?.role === 'ADMIN_001' ? 
-            <AdminDashboard user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
-            <Navigate to="/customer/dashboard" replace />
-          } />
-          
-          <Route path="/customer/*" element={
-            user?.role === 'customer' || user?.role === 'KUNDE_XXX' ? 
-            <CustomerPortal user={user} activeTab={activeTab} setActiveTab={setActiveTab} /> : 
-            <Navigate to="/admin/dashboard" replace />
+          <Route path="/customer/dashboard" element={
+            <CustomerPortal user={user} activeTab={activeTab} setActiveTab={setActiveTab} />
           } />
           
           <Route path="/profile" element={<ProfileSettings user={user} />} />
           
           <Route path="/customer/portal/service-request" element={
-            user?.role === 'customer' || user?.role === 'KUNDE_XXX' ? 
-            <ServiceRequestForm user={user} /> : 
-            <Navigate to="/admin/dashboard" replace />
+            <ServiceRequestForm user={user} />
           } />
         </Routes>
       </div>

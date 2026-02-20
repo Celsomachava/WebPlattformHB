@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/simple-auth';
+import { API_BASE_URL } from '../../config/api';
 
-const KundenAnlegen = ({ user }) => {
+const KundenAnlegen = ({ user, onBack }) => {
   const [customerForm, setCustomerForm] = useState({
     kundennummer: '',
     firmenname: '',
@@ -22,17 +23,31 @@ const KundenAnlegen = ({ user }) => {
     return password;
   };
 
-  const generateKundennummer = () => {
-    const existingClients = JSON.parse(localStorage.getItem('admin_clients') || '[]');
-    const existingNumbers = existingClients
-      .map(c => {
-        const match = c.kundennummer?.match(/KUNDE_(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      })
-      .filter(n => n > 0);
+  const generateKundennummer = async () => {
+    try {
+      const token = await authService.getValidToken();
+      const response = await fetch(`${API_BASE_URL}/customer`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const existingClients = await response.json();
+        const existingNumbers = existingClients
+          .map(c => {
+            const match = c.kundennummer?.match(/KUNDE_(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+          })
+          .filter(n => n > 0);
+        
+        const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+        return `KUNDE_${String(nextNumber).padStart(3, '0')}`;
+      }
+    } catch (error) {
+      console.error('Error generating customer number:', error);
+    }
     
-    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-    return `KUNDE_${String(nextNumber).padStart(4, '0')}`;
+    // Fallback to timestamp-based number
+    return `KUNDE_${Date.now().toString().slice(-6)}`;
   };
 
   const handleInputChange = (field, value) => {
@@ -60,7 +75,7 @@ const KundenAnlegen = ({ user }) => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/kunden', {
+      const response = await fetch(`${API_BASE_URL}/customer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,65 +83,32 @@ const KundenAnlegen = ({ user }) => {
         },
         body: JSON.stringify({
           ...customerForm,
-          created_at: Date.now(),
-          created_by: user?.id
+          role: 'customer'
         })
       });
 
       if (response.ok) {
         const newCustomer = await response.json();
         alert('Kunde erfolgreich angelegt.');
-        setCustomerForm({
-          kundennummer: '',
-          firmenname: '',
-          ansprechpartner: '',
-          email: '',
-          telefon: '',
-          password: ''
-        });
-        
-        // Update cached clients list with transformed data
-        const cachedClients = JSON.parse(localStorage.getItem('admin_clients') || '[]');
-        const transformedCustomer = {
-          id: newCustomer.id,
-          kundennummer: newCustomer.id,
-          firmenname: newCustomer.company,
-          ansprechpartner: newCustomer.name,
-          email: newCustomer.email,
-          telefon: newCustomer.phone,
-          created_at: newCustomer.registeredSince
-        };
-        cachedClients.push(transformedCustomer);
-        localStorage.setItem('admin_clients', JSON.stringify(cachedClients));
-        
-        // Trigger storage event for other components
-        window.dispatchEvent(new Event('storage'));
+        if (onBack) {
+          onBack();
+        } else {
+          setCustomerForm({
+            kundennummer: '',
+            firmenname: '',
+            ansprechpartner: '',
+            email: '',
+            telefon: '',
+            password: ''
+          });
+        }
       } else {
-        throw new Error('Fehler beim Anlegen des Kunden');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Anlegen des Kunden');
       }
     } catch (error) {
-      // Offline fallback
-      const offlineCustomer = {
-        id: crypto.randomUUID(),
-        ...customerForm,
-        created_at: Date.now(),
-        created_by: user?.id,
-        synced: false
-      };
-      
-      const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
-      pending.push(offlineCustomer);
-      localStorage.setItem('pending_customers', JSON.stringify(pending));
-      
-      alert('Kunde wurde offline gespeichert und wird bei Internetverbindung übertragen.');
-      setCustomerForm({
-        kundennummer: '',
-        firmenname: '',
-        ansprechpartner: '',
-        email: '',
-        telefon: '',
-        password: ''
-      });
+      console.error('Error creating customer:', error);
+      setMessage(`Fehler: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,9 +116,26 @@ const KundenAnlegen = ({ user }) => {
 
   return (
     <div style={{ maxWidth: '600px', width: '100%' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Neuen Kunden anlegen</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Erfassen Sie die Grunddaten für einen neuen Kunden</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Neuen Kunden anlegen</h1>
+          <p style={{ color: '#6c757d', margin: 0 }}>Erfassen Sie die Grunddaten für einen neuen Kunden</p>
+        </div>
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #6c757d',
+              backgroundColor: 'transparent',
+              color: '#6c757d',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Zurück
+          </button>
+        )}
       </div>
       <div style={{
         backgroundColor: 'white',
@@ -168,7 +167,7 @@ const KundenAnlegen = ({ user }) => {
                 />
                 <button
                   type="button"
-                  onClick={() => handleInputChange('kundennummer', generateKundennummer())}
+                  onClick={async () => handleInputChange('kundennummer', await generateKundennummer())}
                   style={{
                     padding: '12px 16px',
                     backgroundColor: '#17a2b8',

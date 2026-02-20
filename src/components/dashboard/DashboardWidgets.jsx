@@ -99,7 +99,7 @@ export const RecentOffers = () => {
               <td style={{ padding: '12px 8px', fontSize: '14px' }}>{offer.nummer}</td>
               <td style={{ padding: '12px 8px', fontSize: '14px' }}>{offer.kunden_id}</td>
               <td style={{ padding: '12px 8px', fontSize: '14px', textAlign: 'right', fontWeight: '600' }}>
-                €{offer.brutto?.toFixed(2) || '0.00'}
+                €{(parseFloat(offer.brutto) || 0).toFixed(2)}
               </td>
             </tr>
           ))}
@@ -134,7 +134,7 @@ export const RecentInvoices = () => {
               <td style={{ padding: '12px 8px', fontSize: '14px' }}>{invoice.nummer}</td>
               <td style={{ padding: '12px 8px', fontSize: '14px' }}>{invoice.kunden_id}</td>
               <td style={{ padding: '12px 8px', fontSize: '14px', textAlign: 'right', fontWeight: '600' }}>
-                €{invoice.brutto?.toFixed(2) || '0.00'}
+                €{(parseFloat(invoice.brutto) || 0).toFixed(2)}
               </td>
             </tr>
           ))}

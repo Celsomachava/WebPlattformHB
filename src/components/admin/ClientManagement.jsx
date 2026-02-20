@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
 import CustomerDetailsPage from './CustomerDetailsPage';
+import KundenAnlegen from './KundenAnlegen';
+import { API_BASE_URL } from '../../config/api';
 
 const ClientManagement = ({ user }) => {
   const [clients, setClients] = useState([]);
@@ -9,110 +11,61 @@ const ClientManagement = ({ user }) => {
   const [editingClient, setEditingClient] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [viewingDetails, setViewingDetails] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     loadClients();
     
-    // Listen for storage changes (new customers added)
-    const handleStorageChange = () => {
-      loadClients();
-    };
+    // Auto-refresh every 5 seconds for real-time updates
+    const interval = setInterval(loadClients, 5000);
     
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const loadClients = async () => {
     try {
-      console.log('Loading clients from API...');
+      console.log('Loading clients from database...');
       const token = await authService.getValidToken();
-      console.log('Token:', token);
       
-      const response = await fetch('http://localhost:3001/api/customer', {
+      const response = await fetch(`${API_BASE_URL}/customer`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      console.log('Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('Received data:', data);
+        console.log('Received data from database:', data);
         
-        // Merge with any pending customers from localStorage
-        const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
-        const allClients = [...data, ...pending];
+        const formattedData = data.map(client => ({
+          ...client,
+          created_at: client.created_at ? new Date(client.created_at).toISOString().split('T')[0] : null
+        }));
         
-        setClients(allClients);
-        localStorage.setItem('admin_clients', JSON.stringify(allClients));
+        setClients(formattedData);
       } else {
         console.error('API call failed:', response.status, response.statusText);
         throw new Error('API call failed');
       }
     } catch (error) {
-      console.error('Error loading clients:', error);
-      
-      // Load from localStorage
-      const cached = localStorage.getItem('admin_clients');
-      if (cached) {
-        setClients(JSON.parse(cached));
-      } else {
-        // Fallback to mock data if nothing in cache
-        const mockClients = [
-          {
-            id: 'KUNDE_001',
-            kundennummer: 'KUNDE_001',
-            firmenname: 'Mustermann GmbH',
-            ansprechpartner: 'Max Mustermann',
-            email: 'max@mustermann.de',
-            telefon: '+49 123 456789',
-            strasse: 'Musterstraße 1',
-            plz: '12345',
-            ort: 'Musterstadt',
-            created_at: '2023-01-15'
-          },
-          {
-            id: 'KUNDE_002',
-            kundennummer: 'KUNDE_002',
-            firmenname: 'TechCorp AG',
-            ansprechpartner: 'Anna Schmidt',
-            email: 'a.schmidt@techcorp.de',
-            telefon: '+49 234 567890',
-            strasse: 'Industrieweg 15',
-            plz: '67890',
-            ort: 'Techstadt',
-            created_at: '2023-03-22'
-          },
-          {
-            id: 'KUNDE_003',
-            kundennummer: 'KUNDE_003',
-            firmenname: 'Weber Maschinenbau',
-            ansprechpartner: 'Peter Weber',
-            email: 'p.weber@weber-mb.de',
-            telefon: '+49 345 678901',
-            strasse: 'Fabrikstraße 8',
-            plz: '54321',
-            ort: 'Maschinenhausen',
-            created_at: '2023-05-10'
-          }
-        ];
-        
-        console.log('Using fallback mock data:', mockClients);
-        setClients(mockClients);
-        localStorage.setItem('admin_clients', JSON.stringify(mockClients));
-      }
+      console.error('Error loading clients from database:', error);
+      setClients([]);
+      alert('Fehler beim Laden der Kundendaten. Bitte stellen Sie sicher, dass die Datenbank verfügbar ist.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredClients = clients.filter(client =>
-    client.kundennummer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.firmenname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.ansprechpartner?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients
+    .filter(client => client.role !== 'admin') // Hide admin users
+    .filter(client =>
+      client.kundennummer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.firmenname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.ansprechpartner?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      const numA = a.kundennummer?.toLowerCase() || '';
+      const numB = b.kundennummer?.toLowerCase() || '';
+      return numA.localeCompare(numB);
+    });
 
   const editClient = (client) => {
     setEditingClient(client);
@@ -120,13 +73,35 @@ const ClientManagement = ({ user }) => {
   };
 
   const updateClient = async () => {
-    const updatedClients = clients.map(c => 
-      c.kundennummer === editingClient.kundennummer ? editForm : c
-    );
-    setClients(updatedClients);
-    localStorage.setItem('admin_clients', JSON.stringify(updatedClients));
+    try {
+      const token = await authService.getValidToken();
+      
+      const response = await fetch(`${API_BASE_URL}/customer/${editingClient.kundennummer}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firmenname: editForm.firmenname,
+          ansprechpartner: editForm.ansprechpartner,
+          email: editForm.email,
+          telefon: editForm.telefon
+        })
+      });
+      
+      if (response.ok) {
+        // Reload data immediately after update
+        await loadClients();
+        alert('Kunde wurde erfolgreich aktualisiert!');
+      } else {
+        throw new Error('Update failed');
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+      alert('Fehler beim Aktualisieren des Kunden. Bitte versuchen Sie es erneut.');
+    }
     
-    alert('Kunde wurde aktualisiert!');
     setEditingClient(null);
     setEditForm({});
   };
@@ -134,11 +109,27 @@ const ClientManagement = ({ user }) => {
   const deleteClient = async (kundennummer) => {
     if (!window.confirm('Möchten Sie diesen Kunden wirklich löschen?')) return;
 
-    const updatedClients = clients.filter(c => c.kundennummer !== kundennummer);
-    setClients(updatedClients);
-    localStorage.setItem('admin_clients', JSON.stringify(updatedClients));
-    
-    alert('Kunde wurde gelöscht!');
+    try {
+      const token = await authService.getValidToken();
+      
+      const response = await fetch(`${API_BASE_URL}/customer/${kundennummer}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        // Reload data immediately after delete
+        await loadClients();
+        alert('Kunde wurde erfolgreich gelöscht!');
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      alert('Fehler beim Löschen des Kunden. Bitte versuchen Sie es erneut.');
+    }
   };
 
   const viewDetails = (client) => {
@@ -147,6 +138,10 @@ const ClientManagement = ({ user }) => {
 
   if (viewingDetails) {
     return <CustomerDetailsPage customer={viewingDetails} onBack={() => setViewingDetails(null)} />;
+  }
+
+  if (showCreateForm) {
+    return <KundenAnlegen onBack={() => { setShowCreateForm(false); loadClients(); }} />;
   }
 
   if (editingClient) {
@@ -240,9 +235,30 @@ const ClientManagement = ({ user }) => {
 
   return (
     <div style={{ maxWidth: 'calc(100vw - 270px)' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenverwaltung</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Übersicht aller registrierten Kunden</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenverwaltung</h1>
+          <p style={{ color: '#6c757d', margin: 0 }}>Übersicht aller registrierten Kunden</p>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          style={{
+            padding: '12px 24px',
+            border: 'none',
+            backgroundColor: '#28a745',
+            color: 'white',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>+</span>
+          Neuen Kunden anlegen
+        </button>
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -271,6 +287,7 @@ const ClientManagement = ({ user }) => {
               <th style={{ padding: '12px', textAlign: 'left' }}>Ansprechpartner</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>E-Mail</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Telefon</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Rolle</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Erstellt am</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Aktionen</th>
             </tr>
@@ -278,7 +295,7 @@ const ClientManagement = ({ user }) => {
           <tbody>
             {filteredClients.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                <td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
                   Keine Kunden gefunden
                 </td>
               </tr>
@@ -294,6 +311,17 @@ const ClientManagement = ({ user }) => {
                   <td style={{ padding: '12px' }}>{client.ansprechpartner}</td>
                   <td style={{ padding: '12px' }}>{client.email}</td>
                   <td style={{ padding: '12px' }}>{client.telefon}</td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      backgroundColor: client.role === 'admin' ? '#dc3545' : '#28a745',
+                      color: 'white'
+                    }}>
+                      {client.role === 'admin' ? 'Admin' : 'Kunde'}
+                    </span>
+                  </td>
                   <td style={{ padding: '12px' }}>
                     {client.created_at ? new Date(client.created_at).toLocaleDateString('de-DE') : '-'}
                   </td>

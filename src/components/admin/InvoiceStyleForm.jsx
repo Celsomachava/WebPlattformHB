@@ -68,6 +68,7 @@ const InvoiceStyleForm = ({
                   type="text"
                   placeholder="Person oder Organisation"
                   value={selectedClient?.firmenname || ''}
+                  onChange={() => {}}
                   readOnly
                   style={{ 
                     width: '100%', 
@@ -124,6 +125,7 @@ const InvoiceStyleForm = ({
                   type="text"
                   placeholder="Straße und Hausnummer"
                   value={selectedClient?.strasse || ''}
+                  onChange={() => {}}
                   readOnly
                   style={{ 
                     width: '100%', 
@@ -141,6 +143,7 @@ const InvoiceStyleForm = ({
                     type="text"
                     placeholder="PLZ"
                     value={selectedClient?.plz || ''}
+                    onChange={() => {}}
                     readOnly
                     style={{ 
                       padding: '10px', 
@@ -155,6 +158,7 @@ const InvoiceStyleForm = ({
                     type="text"
                     placeholder="Ort"
                     value={selectedClient?.ort || ''}
+                    onChange={() => {}}
                     readOnly
                     style={{ 
                       padding: '10px', 
@@ -207,6 +211,8 @@ const InvoiceStyleForm = ({
                 <input
                   type="date"
                   value={new Date().toISOString().split('T')[0]}
+                  onChange={() => {}}
+                  readOnly
                   style={{ 
                     width: '100%',
                     padding: '10px', 

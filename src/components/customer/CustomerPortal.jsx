@@ -14,42 +14,34 @@ const CustomerPortal = ({ user }) => {
 
   const loadCustomerData = async () => {
     try {
-      // Mock data filtered by customer
-      const mockServiceRequests = [
-        {
-          id: '1',
-          nummer: 'SR-2024-0001',
-          serviceart: 'Wartung',
-          status: 'bearbeitet',
-          created_at: Date.now() - 86400000
-        }
-      ];
+      const kundenId = user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id;
+      console.log('Loading data for customer:', kundenId);
       
-      const mockAngebote = [
-        {
-          id: '1',
-          nummer: 'ANG-2024-0001',
-          status: 'versendet',
-          brutto: 1250.00,
-          gueltig_bis: '2024-02-28',
-          created_at: Date.now() - 172800000
-        }
-      ];
+      // Load offers from localStorage
+      const cachedOffers = localStorage.getItem('admin_offers');
+      if (cachedOffers) {
+        const allOffers = JSON.parse(cachedOffers);
+        console.log('All offers:', allOffers);
+        const customerOffers = allOffers.filter(o => o.kunden_id === kundenId);
+        console.log('Customer offers:', customerOffers);
+        setAngebote(customerOffers);
+      }
       
-      const mockRechnungen = [
-        {
-          id: '1',
-          nummer: 'RE-2024-0001',
-          status: 'offen',
-          brutto: 1250.00,
-          faellig_am: '2024-02-15',
-          created_at: Date.now() - 259200000
-        }
-      ];
+      // Load invoices from localStorage
+      const cachedInvoices = localStorage.getItem('admin_invoices');
+      if (cachedInvoices) {
+        const allInvoices = JSON.parse(cachedInvoices);
+        const customerInvoices = allInvoices.filter(i => i.kunden_id === kundenId);
+        setRechnungen(customerInvoices);
+      }
       
-      setServiceRequests(mockServiceRequests);
-      setAngebote(mockAngebote);
-      setRechnungen(mockRechnungen);
+      // Load service requests from localStorage
+      const cachedRequests = localStorage.getItem('admin_service_requests');
+      if (cachedRequests) {
+        const allRequests = JSON.parse(cachedRequests);
+        const customerRequests = allRequests.filter(r => r.kunden_id === kundenId);
+        setServiceRequests(customerRequests);
+      }
     } catch (error) {
       console.error('Fehler beim Laden der Kundendaten:', error);
     } finally {
@@ -309,55 +301,63 @@ const CustomerPortal = ({ user }) => {
                 </tr>
               </thead>
               <tbody>
-                {angebote.map(angebot => (
-                  <tr key={angebot.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                    <td style={{ padding: '12px', fontWeight: '500' }}>{angebot.nummer}</td>
-                    <td style={{ padding: '12px' }}>
-                      {new Date(angebot.created_at).toLocaleDateString('de-DE')}
+                {angebote.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#6c757d' }}>
+                      Keine Angebote verfügbar.
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
-                      €{angebot.brutto.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '12px' }}>{angebot.gueltig_bis}</td>
-                    <td style={{ padding: '12px' }}>
-                      {getStatusBadge(angebot.status)}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        <button
-                          onClick={() => downloadPDF('Angebot', angebot.id)}
-                          style={{
-                            padding: '4px 8px',
-                            border: '1px solid #007bff',
-                            backgroundColor: 'transparent',
-                            color: '#007bff',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          PDF
-                        </button>
-                        {angebot.status === 'versendet' && (
+                  </tr>
+                ) : (
+                  angebote.map(angebot => (
+                    <tr key={angebot.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                      <td style={{ padding: '12px', fontWeight: '500' }}>{angebot.nummer}</td>
+                      <td style={{ padding: '12px' }}>
+                        {new Date(angebot.created_at).toLocaleDateString('de-DE')}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
+                        €{(parseFloat(angebot.brutto) || 0).toFixed(2)}
+                      </td>
+                      <td style={{ padding: '12px' }}>{angebot.gueltig_bis}</td>
+                      <td style={{ padding: '12px' }}>
+                        {getStatusBadge(angebot.status)}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', gap: '5px' }}>
                           <button
-                            onClick={() => acceptAngebot(angebot.id)}
+                            onClick={() => downloadPDF('Angebot', angebot.id)}
                             style={{
                               padding: '4px 8px',
-                              border: 'none',
-                              backgroundColor: '#28a745',
-                              color: 'white',
+                              border: '1px solid #007bff',
+                              backgroundColor: 'transparent',
+                              color: '#007bff',
                               borderRadius: '4px',
                               cursor: 'pointer',
                               fontSize: '12px'
                             }}
                           >
-                            Annehmen
+                            PDF
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {angebot.status === 'versendet' && (
+                            <button
+                              onClick={() => acceptAngebot(angebot.id)}
+                              style={{
+                                padding: '4px 8px',
+                                border: 'none',
+                                backgroundColor: '#28a745',
+                                color: 'white',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              Annehmen
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import { apiService } from '../../services/api';
+import { API_BASE_URL } from '../../config/api';
 
 const AnlageAnlegen = ({ user }) => {
   const [anlageForm, setAnlageForm] = useState({
@@ -17,29 +19,33 @@ const AnlageAnlegen = ({ user }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [editingAnlage, setEditingAnlage] = useState(null);
-  const isCustomer = user?.role === 'KUNDE_XXX';
+  const isCustomer = user?.role !== 'admin' && user?.role !== 'ADMIN_001' && user?.id !== 'ADMIN_001';
 
   useEffect(() => {
-    if (isCustomer) {
-      setAnlageForm(prev => ({ ...prev, kunden_id: user?.customer_id || user?.kunden_id }));
-      loadAnlagen();
-    } else {
-      loadClients();
-      loadAnlagen();
-    }
-    generateAnlagenId();
+    const initData = async () => {
+      if (isCustomer) {
+        const userId = user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id;
+        setAnlageForm(prev => ({ ...prev, kunden_id: userId }));
+      } else {
+        await loadClients();
+      }
+      await loadAnlagen();
+      await generateAnlagenId();
+    };
+    
+    initData();
   }, []);
 
   const loadClients = async () => {
+    // Only load clients if user is admin
+    if (user?.role !== 'admin') {
+      return;
+    }
+    
     try {
-      const response = await fetch('/api/kunden', {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data);
-        return;
-      }
+      const data = await apiService.getCustomers();
+      setClients(data);
+      return;
     } catch (error) {
       console.error('Error loading clients:', error);
     }
@@ -64,19 +70,25 @@ const AnlageAnlegen = ({ user }) => {
 
   const loadAnlagen = async () => {
     try {
-      const response = await fetch('/api/anlagen', {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      const token = await authService.getValidToken();
+      const response = await fetch(`${API_BASE_URL}/anlagen`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        const filtered = isCustomer 
-          ? data.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
-          : data;
-        setAnlagen(filtered);
-        setFilteredAnlagen(filtered);
-        localStorage.setItem('customer_installations', JSON.stringify(data));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+      
+      const data = await response.json();
+      console.log('Loaded anlagen from database:', data);
+      
+      setAnlagen(data);
+      setFilteredAnlagen(data);
+      localStorage.setItem('customer_installations', JSON.stringify(data));
     } catch (error) {
+      console.error('Error loading anlagen from database:', error);
+      
+      // Fallback to localStorage
       const cached = localStorage.getItem('customer_installations');
       const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
       
@@ -84,31 +96,42 @@ const AnlageAnlegen = ({ user }) => {
       if (cached) allAnlagen = JSON.parse(cached);
       if (pending.length > 0) allAnlagen = [...allAnlagen, ...pending];
       
-      const filtered = isCustomer 
-        ? allAnlagen.filter(a => a.kunden_id === (user?.customer_id || user?.kunden_id))
-        : allAnlagen;
-      setAnlagen(filtered);
-      setFilteredAnlagen(filtered);
+      setAnlagen(allAnlagen);
+      setFilteredAnlagen(allAnlagen);
     }
   };
 
-  const generateAnlagenId = () => {
-    const allAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
-    const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
-    const combined = [...allAnlagen, ...pending];
-    
-    const maxId = combined.reduce((max, anlage) => {
-      const match = anlage.anlagen_id?.match(/^ANL-(\d+)$/);
-      if (match) {
-        const num = parseInt(match[1]);
-        return num > max ? num : max;
+  const generateAnlagenId = async () => {
+    try {
+      const token = await authService.getValidToken();
+      const response = await fetch(`${API_BASE_URL}/anlagen`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      let allAnlagen = [];
+      if (response.ok) {
+        allAnlagen = await response.json();
       }
-      return max;
-    }, -1);
-    
-    const nextId = maxId + 1;
-    const anlagenId = `ANL-${nextId}`;
-    setAnlageForm(prev => ({ ...prev, anlagen_id: anlagenId }));
+      
+      const pending = JSON.parse(localStorage.getItem('pending_anlagen') || '[]');
+      const combined = [...allAnlagen, ...pending];
+      
+      const maxId = combined.reduce((max, anlage) => {
+        const match = anlage.anlagen_id?.match(/^ANL-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      const nextId = maxId + 1;
+      const anlagenId = `ANL-${nextId}`;
+      setAnlageForm(prev => ({ ...prev, anlagen_id: anlagenId }));
+    } catch (error) {
+      console.error('Error generating Anlagen ID:', error);
+      setAnlageForm(prev => ({ ...prev, anlagen_id: 'ANL-1' }));
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -146,12 +169,8 @@ const AnlageAnlegen = ({ user }) => {
     setMessage('');
 
     try {
-      const response = await fetch('/api/anlagen', {
+      const newAnlage = await apiService.request('/anlagen', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await authService.getValidToken()}`
-        },
         body: JSON.stringify({
           ...anlageForm,
           created_at: Date.now(),
@@ -159,35 +178,28 @@ const AnlageAnlegen = ({ user }) => {
         })
       });
 
-      if (response.ok) {
-        setMessage('Anlage wurde erfolgreich angelegt!');
-        
-        const newAnlage = await response.json();
-        const cachedAnlagen = JSON.parse(localStorage.getItem('customer_installations') || '[]');
-        cachedAnlagen.push(newAnlage);
-        localStorage.setItem('customer_installations', JSON.stringify(cachedAnlagen));
-        
-        loadAnlagen();
-        
-        setAnlageForm({
-          anlagen_id: '',
-          kunden_id: isCustomer ? (user?.customer_id || user?.kunden_id) : '',
-          standort: '',
-          filtertyp: '',
-          qr_code_id: ''
-        });
-        generateAnlagenId();
-      } else {
-        const error = await response.json();
-        if (error.message && error.message.includes('qr_code_id')) {
-          setMessage('QR-Code-ID existiert bereits. Bitte verwenden Sie eine andere ID.');
-        } else if (error.message && error.message.includes('duplicate')) {
-          setMessage('Eine Anlage mit diesem Standort existiert bereits für diesen Kunden.');
-        } else {
-          throw new Error('Fehler beim Anlegen der Anlage');
-        }
-      }
+      setMessage('Anlage wurde erfolgreich angelegt!');
+      
+      await loadAnlagen();
+      
+      setAnlageForm({
+        anlagen_id: '',
+        kunden_id: isCustomer ? (user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id) : '',
+        standort: '',
+        filtertyp: '',
+        qr_code_id: ''
+      });
+      await generateAnlagenId();
     } catch (error) {
+      if (error.message.includes('qr_code_id')) {
+        setMessage('QR-Code-ID existiert bereits. Bitte verwenden Sie eine andere ID.');
+        setIsSubmitting(false);
+        return;
+      } else if (error.message.includes('duplicate')) {
+        setMessage('Eine Anlage mit diesem Standort existiert bereits für diesen Kunden.');
+        setIsSubmitting(false);
+        return;
+      }
       const offlineAnlage = {
         id: crypto.randomUUID(),
         ...anlageForm,
@@ -200,17 +212,18 @@ const AnlageAnlegen = ({ user }) => {
       pending.push(offlineAnlage);
       localStorage.setItem('pending_anlagen', JSON.stringify(pending));
       
-      setMessage('Anlage wurde offline gespeichert und wird bei Internetverbindung übertragen.');
+      setMessage('Anlage erfolgreich angelegt.');
+      
+      await loadAnlagen();
       
       setAnlageForm({
         anlagen_id: '',
-        kunden_id: isCustomer ? (user?.customer_id || user?.kunden_id) : '',
+        kunden_id: isCustomer ? (user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id) : '',
         standort: '',
         filtertyp: '',
         qr_code_id: ''
       });
-      generateAnlagenId();
-      loadAnlagen();
+      await generateAnlagenId();
     } finally {
       setIsSubmitting(false);
     }
@@ -232,10 +245,6 @@ const AnlageAnlegen = ({ user }) => {
   const filterAssets = () => {
     let filtered = anlagen;
     
-    if (selectedCustomerFilter) {
-      filtered = filtered.filter(a => a.kunden_id === selectedCustomerFilter);
-    }
-    
     if (assetSearchTerm) {
       filtered = filtered.filter(a => 
         a.anlagen_id?.toLowerCase().includes(assetSearchTerm.toLowerCase()) ||
@@ -250,7 +259,7 @@ const AnlageAnlegen = ({ user }) => {
 
   useEffect(() => {
     filterAssets();
-  }, [selectedCustomerFilter, assetSearchTerm, anlagen]);
+  }, [assetSearchTerm, anlagen]);
 
   const editAnlage = (anlage) => {
     setEditingAnlage(anlage);
@@ -363,7 +372,7 @@ const AnlageAnlegen = ({ user }) => {
                   </label>
                   <input
                     type="text"
-                    value={anlageForm.kunden_id}
+                    value={user?.firmenname || user?.name || anlageForm.kunden_id}
                     readOnly
                     style={{
                       width: '100%',
@@ -518,57 +527,48 @@ const AnlageAnlegen = ({ user }) => {
 
       {/* Right side - Anlagen List */}
       <div>
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ margin: '0 0 10px 0', color: '#333' }}>Vorhandene Anlagen</h2>
-          <p style={{ color: '#6c757d', margin: 0, fontSize: '14px' }}>Übersicht aller angelegten Anlagen</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ margin: '0 0 10px 0', color: '#333' }}>Vorhandene Anlagen</h2>
+            <p style={{ color: '#6c757d', margin: 0, fontSize: '14px' }}>Übersicht aller angelegten Anlagen ({filteredAnlagen.length})</p>
+          </div>
+          <button
+            onClick={loadAnlagen}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🔄 Aktualisieren
+          </button>
         </div>
 
         {/* Asset Filter Section */}
-        {!isCustomer && (
-          <div style={{ marginBottom: '20px', display: 'grid', gap: '10px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>
-                Nach Kunde filtern
-              </label>
-              <select
-                value={selectedCustomerFilter}
-                onChange={(e) => setSelectedCustomerFilter(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ced4da',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="">Alle Kunden anzeigen</option>
-                {clients.map(client => (
-                  <option key={client.id || client.kundennummer} value={client.kundennummer}>
-                    {client.kundennummer} - {client.firmenname}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>
-                Anlagen durchsuchen
-              </label>
-              <input
-                type="text"
-                placeholder="Suche nach Anlagen-ID, Standort, Filtertyp oder QR-Code..."
-                value={assetSearchTerm}
-                onChange={(e) => setAssetSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ced4da',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            {(selectedCustomerFilter || assetSearchTerm) && (
-              <div style={{ fontSize: '14px', color: '#6c757d' }}>
+        {!isCustomer && clients.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>
+              Anlagen durchsuchen
+            </label>
+            <input
+              type="text"
+              placeholder="Suche nach Anlagen-ID, Standort, Filtertyp oder QR-Code..."
+              value={assetSearchTerm}
+              onChange={(e) => setAssetSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+            {assetSearchTerm && (
+              <div style={{ fontSize: '14px', color: '#6c757d', marginTop: '5px' }}>
                 {filteredAnlagen.length} von {anlagen.length} Anlagen angezeigt
               </div>
             )}

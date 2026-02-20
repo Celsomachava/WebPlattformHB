@@ -207,11 +207,12 @@ const OfferForm = ({ offerForm, setOfferForm, clients, generateOfferNumber, addP
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #ddd' }}>
-                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '500', color: '#666' }}>#</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '500', color: '#666' }}>ID</th>
                 <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '500', color: '#666' }}>Produkt oder Service</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '500', color: '#666' }}>Beschreibung</th>
                 <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '500', color: '#666', width: '80px' }}>Menge</th>
-                <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', fontWeight: '500', color: '#666', width: '120px' }}>Preis (brutto)</th>
-                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '500', color: '#666', width: '60px' }}>USt.</th>
+                <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', fontWeight: '500', color: '#666', width: '120px' }}>Preis</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '500', color: '#666', width: '60px' }}>MwSt.</th>
                 <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '500', color: '#666', width: '80px' }}>Rabatt</th>
                 <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', fontWeight: '500', color: '#666', width: '120px' }}>Betrag</th>
                 <th style={{ width: '40px' }}></th>
@@ -220,11 +221,20 @@ const OfferForm = ({ offerForm, setOfferForm, clients, generateOfferNumber, addP
             <tbody>
               {offerForm.positionen.map((position, index) => (
                 <tr key={position.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td style={{ padding: '10px 8px', fontSize: '14px' }}>{index + 1}.</td>
+                  <td style={{ padding: '10px 8px', fontSize: '14px' }}>{position.id || (index + 1)}</td>
                   <td style={{ padding: '10px 8px' }}>
                     <input
                       type="text"
-                      placeholder="Unternehmensberatung"
+                      placeholder="Produktname"
+                      value={position.name || position.beschreibung}
+                      onChange={(e) => updatePosition(index, 'name', e.target.value)}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+                    />
+                  </td>
+                  <td style={{ padding: '10px 8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Beschreibung"
                       value={position.beschreibung}
                       onChange={(e) => updatePosition(index, 'beschreibung', e.target.value)}
                       style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
@@ -234,10 +244,10 @@ const OfferForm = ({ offerForm, setOfferForm, clients, generateOfferNumber, addP
                     <input
                       type="number"
                       value={position.menge}
-                      onChange={(e) => updatePosition(index, 'menge', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => updatePosition(index, 'menge', Math.max(1, parseInt(e.target.value) || 1))}
                       style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center', fontSize: '14px' }}
-                      min="0"
-                      step="0.01"
+                      min="1"
+                      step="1"
                     />
                   </td>
                   <td style={{ padding: '10px 8px' }}>

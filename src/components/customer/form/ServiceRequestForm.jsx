@@ -3,7 +3,7 @@ import { authService } from '../../../services/simple-auth';
 
 const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   const [formData, setFormData] = useState({
-    kunden_id: user?.customer_id || user?.kunden_id || '',
+    kunden_id: user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id || '',
     anlagen_id: preSelectedAsset?.id || '',
     standort: preSelectedAsset?.standort || '',
     filtertyp: preSelectedAsset?.filtertyp || '',
@@ -309,7 +309,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
 
       if (!isOffline) {
         try {
-          const response = await fetch('/api/serviceanfrage', {
+          const response = await fetch('http://localhost:3002/api/serviceanfragen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -319,24 +319,23 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           });
           
           if (response.ok) {
-            // Successfully sent to server
             localStorage.removeItem('service_request_draft');
+            alert('Serviceanfrage erfolgreich erstellt!');
             window.location.href = '/customer/dashboard';
             return;
           } else {
             throw new Error('Server error');
           }
         } catch (e) {
-          console.log('Server update failed, saving offline');
-          // Only save to pending if server fails
+          console.error('API error, saving offline:', e);
           const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
           pending.push(requestData);
           localStorage.setItem('pending_service_requests', JSON.stringify(pending));
           localStorage.removeItem('service_request_draft');
+          alert('Serviceanfrage wurde offline gespeichert und wird synchronisiert, sobald Sie online sind.');
           window.location.href = '/customer/dashboard';
         }
       } else {
-        // Offline mode - save to pending
         const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
         pending.push(requestData);
         localStorage.setItem('pending_service_requests', JSON.stringify(pending));
