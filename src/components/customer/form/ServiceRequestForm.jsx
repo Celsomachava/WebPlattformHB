@@ -319,8 +319,10 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           });
           
           if (response.ok) {
-            // Successfully sent to server, don't save to pending
-            alert('Serviceanfrage wurde erfolgreich übermittelt!');
+            // Successfully sent to server
+            localStorage.removeItem('service_request_draft');
+            window.location.href = '/customer/dashboard';
+            return;
           } else {
             throw new Error('Server error');
           }
@@ -330,33 +332,17 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
           pending.push(requestData);
           localStorage.setItem('pending_service_requests', JSON.stringify(pending));
-          alert('Serviceanfrage wurde offline gespeichert.');
+          localStorage.removeItem('service_request_draft');
+          window.location.href = '/customer/dashboard';
         }
       } else {
         // Offline mode - save to pending
         const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
         pending.push(requestData);
         localStorage.setItem('pending_service_requests', JSON.stringify(pending));
-        alert('Serviceanfrage wurde offline gespeichert.');
+        localStorage.removeItem('service_request_draft');
+        window.location.href = '/customer/dashboard';
       }
-      
-      localStorage.removeItem('service_request_draft');
-      setFormData({
-        kunden_id: isCustomer ? (user?.customer_id || user?.kunden_id) : '',
-        anlagen_id: '',
-        standort: '',
-        filtertyp: '',
-        qr_code: '',
-        serviceart: '',
-        dringlichkeit: 'normal',
-        wunschtermin: '',
-        zeitfenster: '',
-        bemerkungen: '',
-        datenschutz: false
-      });
-      setAttachments([]);
-      setSelectedAnlage(null);
-      setIsDraft(false);
       
     } catch (error) {
       console.error('Submit error:', error);
