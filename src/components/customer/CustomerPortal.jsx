@@ -123,22 +123,35 @@ const CustomerPortal = ({ user }) => {
     }
   };
 
-  const StatCard = ({ title, value, subtitle, color = '#007bff' }) => (
+  const StatCard = ({ title, value, subtitle, color = '#007bff', icon }) => (
     <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      padding: '20px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      borderLeft: `4px solid ${color}`
+      background: 'white',
+      borderRadius: '12px',
+      padding: '24px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #e9ecef',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+      cursor: 'default'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = 'translateY(-4px)';
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
     }}>
-      <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '14px', fontWeight: '500' }}>
-        {title}
-      </h3>
-      <div style={{ fontSize: '24px', fontWeight: 'bold', color, marginBottom: '5px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+        <h3 style={{ margin: 0, color: '#6c757d', fontSize: '14px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {title}
+        </h3>
+        {icon && <span style={{ fontSize: '24px' }}>{icon}</span>}
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: '700', color, marginBottom: '8px' }}>
         {value}
       </div>
       {subtitle && (
-        <div style={{ fontSize: '12px', color: '#6c757d' }}>
+        <div style={{ fontSize: '13px', color: '#6c757d' }}>
           {subtitle}
         </div>
       )}
@@ -179,36 +192,52 @@ const CustomerPortal = ({ user }) => {
   }
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
+    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '30px', background: '#f8f9fa', minHeight: 'calc(100vh - 60px)' }}>
       {activeTab === 'overview' && (
-        <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Übersicht</h1>
-          <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id}</p>
+        <div style={{ marginBottom: '40px' }}>
+          <h1 style={{ margin: '0 0 8px 0', color: '#2c3e50', fontSize: '32px', fontWeight: '700' }}>Übersicht</h1>
+          <p style={{ color: '#6c757d', margin: 0, fontSize: '16px' }}>Willkommen zurück, {user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id}</p>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div style={{ marginBottom: '30px', borderBottom: '1px solid #dee2e6' }}>
-        <div style={{ display: 'flex', gap: '0' }}>
+      <div style={{ marginBottom: '30px', background: 'white', borderRadius: '12px', padding: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           {[
-            { key: 'overview', label: 'Übersicht' },
-            { key: 'service-requests', label: 'Serviceanfragen' },
-            { key: 'angebote', label: 'Angebote' },
-            { key: 'rechnungen', label: 'Rechnungen' }
+            { key: 'overview', label: 'Übersicht', icon: '🏠' },
+            { key: 'service-requests', label: 'Serviceanfragen', icon: '🔧' },
+            { key: 'angebote', label: 'Angebote', icon: '📄' },
+            { key: 'rechnungen', label: 'Rechnungen', icon: '💰' }
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               style={{
-                padding: '12px 24px',
+                padding: '12px 20px',
                 border: 'none',
-                backgroundColor: 'transparent',
-                color: activeTab === tab.key ? '#007bff' : '#6c757d',
-                borderBottom: activeTab === tab.key ? '2px solid #007bff' : '2px solid transparent',
+                background: activeTab === tab.key ? '#007bff' : 'transparent',
+                color: activeTab === tab.key ? 'white' : '#6c757d',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: activeTab === tab.key ? '500' : 'normal'
+                fontWeight: activeTab === tab.key ? '600' : '500',
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.key) {
+                  e.target.style.background = '#f8f9fa';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.key) {
+                  e.target.style.background = 'transparent';
+                }
               }}
             >
+              <span>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
@@ -218,71 +247,88 @@ const CustomerPortal = ({ user }) => {
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '40px' }}>
             <StatCard 
               title="Serviceanfragen" 
               value={serviceRequests.length} 
               subtitle="Gesamt eingereicht"
               color="#28a745"
+              icon="📋"
             />
             <StatCard 
               title="Offene Angebote" 
               value={angebote.filter(a => a.status === 'versendet').length} 
               subtitle="Warten auf Annahme"
               color="#ffc107"
+              icon="📄"
             />
             <StatCard 
               title="Offene Rechnungen" 
               value={rechnungen.filter(r => r.status === 'offen').length} 
               subtitle="Zu bezahlen"
               color="#dc3545"
+              icon="⚠️"
             />
             <StatCard 
-              title="Offener Betrag" 
-              value={`€${rechnungen.filter(r => r.status === 'offen').reduce((sum, r) => sum + r.brutto, 0).toFixed(2)}`} 
+              title="Gesamtkosten" 
+              value={`€${rechnungen.reduce((sum, r) => sum + (parseFloat(r.brutto) || 0), 0).toFixed(2)}`} 
+              subtitle="Alle Rechnungen"
               color="#007bff"
+              icon="💰"
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ marginBottom: '15px' }}>Letzte Aktivitäten</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>📅 Letzte Aktivitäten</h3>
               {[...serviceRequests, ...angebote, ...rechnungen]
                 .sort((a, b) => b.created_at - a.created_at)
                 .slice(0, 5)
                 .map((item, index) => (
-                  <div key={index} style={{ padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                    <div style={{ fontWeight: '500' }}>{item.nummer}</div>
-                    <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                  <div key={index} style={{ padding: '12px 0', borderBottom: index < 4 ? '1px solid #f0f0f0' : 'none' }}>
+                    <div style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>{item.nummer}</div>
+                    <div style={{ fontSize: '13px', color: '#6c757d' }}>
                       {new Date(item.created_at).toLocaleDateString('de-DE')}
                     </div>
                   </div>
                 ))}
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ marginBottom: '15px' }}>Schnellaktionen</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>⚡ Schnellaktionen</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button style={{
-                  padding: '12px',
-                  backgroundColor: '#28a745',
+                  padding: '14px 18px',
+                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  textAlign: 'left'
-                }}>
-                  + Neue Serviceanfrage
+                  textAlign: 'left',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
+                  ➕ Neue Serviceanfrage
                 </button>
                 <button style={{
-                  padding: '12px',
-                  backgroundColor: '#007bff',
+                  padding: '14px 18px',
+                  background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  textAlign: 'left'
-                }}>
+                  textAlign: 'left',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 2px 8px rgba(0, 123, 255, 0.3)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
                   📄 Dokumente herunterladen
                 </button>
               </div>
