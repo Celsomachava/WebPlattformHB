@@ -50,7 +50,8 @@ const InvoiceModule = ({ user }) => {
             positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
             netto: parseFloat(inv.netto) || 0,
             mwst_betrag: parseFloat(inv.mwst) || 0,
-            brutto: parseFloat(inv.brutto) || 0
+            brutto: parseFloat(inv.brutto) || 0,
+            faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
           }));
           setInvoices(parsed);
           localStorage.setItem('admin_invoices', JSON.stringify(parsed));
@@ -73,7 +74,8 @@ const InvoiceModule = ({ user }) => {
           positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
           netto: parseFloat(inv.netto) || 0,
           mwst_betrag: parseFloat(inv.mwst) || 0,
-          brutto: parseFloat(inv.brutto) || 0
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
         }));
         setInvoices(parsed);
       }
@@ -161,7 +163,8 @@ const InvoiceModule = ({ user }) => {
           positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
           netto: parseFloat(inv.netto) || 0,
           mwst_betrag: parseFloat(inv.mwst) || 0,
-          brutto: parseFloat(inv.brutto) || 0
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
         }));
         setInvoices(parsed);
         localStorage.setItem('admin_invoices', JSON.stringify(parsed));
@@ -174,7 +177,8 @@ const InvoiceModule = ({ user }) => {
           positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
           netto: parseFloat(inv.netto) || 0,
           mwst_betrag: parseFloat(inv.mwst) || 0,
-          brutto: parseFloat(inv.brutto) || 0
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
         }));
         setInvoices(parsed);
       }
