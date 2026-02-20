@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
+import { API_BASE_URL } from '../../config/api';
 
 const CustomerPortal = ({ user }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -10,37 +11,93 @@ const CustomerPortal = ({ user }) => {
 
   useEffect(() => {
     loadCustomerData();
+    
+    // Reload data every 5 seconds to catch new offers
+    const interval = setInterval(() => {
+      loadCustomerData();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadCustomerData = async () => {
     try {
-      const kundenId = user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id;
-      console.log('Loading data for customer:', kundenId);
+      const kundenId = (user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id || '').toString().toUpperCase();
       
-      // Load offers from localStorage
-      const cachedOffers = localStorage.getItem('admin_offers');
-      if (cachedOffers) {
-        const allOffers = JSON.parse(cachedOffers);
-        console.log('All offers:', allOffers);
-        const customerOffers = allOffers.filter(o => o.kunden_id === kundenId);
-        console.log('Customer offers:', customerOffers);
-        setAngebote(customerOffers);
+      // Try to load from API first
+      try {
+        const token = await authService.getValidToken();
+        const response = await fetch(`${API_BASE_URL}/offers?kunden_id=${kundenId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setAngebote(data);
+        } else {
+          throw new Error('API failed');
+        }
+      } catch (apiError) {
+        // Fallback to localStorage
+        const cachedOffers = localStorage.getItem('admin_offers');
+        if (cachedOffers) {
+          const allOffers = JSON.parse(cachedOffers);
+          const customerOffers = allOffers.filter(o => {
+            const offerKundenId = (o.kunden_id || '').toString().toUpperCase();
+            return offerKundenId === kundenId;
+          });
+          setAngebote(customerOffers);
+        }
       }
       
-      // Load invoices from localStorage
-      const cachedInvoices = localStorage.getItem('admin_invoices');
-      if (cachedInvoices) {
-        const allInvoices = JSON.parse(cachedInvoices);
-        const customerInvoices = allInvoices.filter(i => i.kunden_id === kundenId);
-        setRechnungen(customerInvoices);
+      // Load invoices
+      try {
+        const token = await authService.getValidToken();
+        const response = await fetch(`${API_BASE_URL}/invoices?kunden_id=${kundenId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setRechnungen(data);
+        } else {
+          throw new Error('API failed');
+        }
+      } catch (apiError) {
+        const cachedInvoices = localStorage.getItem('admin_invoices');
+        if (cachedInvoices) {
+          const allInvoices = JSON.parse(cachedInvoices);
+          const customerInvoices = allInvoices.filter(i => {
+            const invoiceKundenId = (i.kunden_id || '').toString().toUpperCase();
+            return invoiceKundenId === kundenId;
+          });
+          setRechnungen(customerInvoices);
+        }
       }
       
-      // Load service requests from localStorage
-      const cachedRequests = localStorage.getItem('admin_service_requests');
-      if (cachedRequests) {
-        const allRequests = JSON.parse(cachedRequests);
-        const customerRequests = allRequests.filter(r => r.kunden_id === kundenId);
-        setServiceRequests(customerRequests);
+      // Load service requests
+      try {
+        const token = await authService.getValidToken();
+        const response = await fetch(`${API_BASE_URL}/serviceanfragen?kunden_id=${kundenId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setServiceRequests(data);
+        } else {
+          throw new Error('API failed');
+        }
+      } catch (apiError) {
+        const cachedRequests = localStorage.getItem('admin_service_requests');
+        if (cachedRequests) {
+          const allRequests = JSON.parse(cachedRequests);
+          const customerRequests = allRequests.filter(r => {
+            const requestKundenId = (r.kunden_id || '').toString().toUpperCase();
+            return requestKundenId === kundenId;
+          });
+          setServiceRequests(customerRequests);
+        }
       }
     } catch (error) {
       console.error('Fehler beim Laden der Kundendaten:', error);
@@ -123,10 +180,12 @@ const CustomerPortal = ({ user }) => {
 
   return (
     <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenportal</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id}</p>
-      </div>
+      {activeTab === 'overview' && (
+        <div style={{ marginBottom: '30px' }}>
+          <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Übersicht</h1>
+          <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id}</p>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div style={{ marginBottom: '30px', borderBottom: '1px solid #dee2e6' }}>
@@ -287,6 +346,39 @@ const CustomerPortal = ({ user }) => {
       {activeTab === 'angebote' && (
         <div>
           <h2 style={{ marginBottom: '20px' }}>Meine Angebote</h2>
+          
+          {/* Debug Info */}
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px' }}>
+            <strong>Debug Info:</strong><br/>
+            <div style={{ fontSize: '13px', marginTop: '5px' }}>
+              Your Customer ID: <strong>{(user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id || '').toString().toUpperCase()}</strong><br/>
+              Offers found for you: <strong>{angebote.length}</strong><br/>
+              <button 
+                onClick={() => {
+                  const allOffers = JSON.parse(localStorage.getItem('admin_offers') || '[]');
+                  console.log('=== OFFER DEBUG ===');
+                  console.log('Your ID:', (user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id || '').toString().toUpperCase());
+                  console.log('All offers:', allOffers);
+                  allOffers.forEach((o, i) => {
+                    console.log(`Offer ${i + 1}: ${o.nummer} - Customer: "${o.kunden_id}" (${typeof o.kunden_id})`);
+                  });
+                  alert(`Total offers in system: ${allOffers.length}\n\nOffers:\n${allOffers.map(o => `${o.nummer} - Customer: "${o.kunden_id}"`).join('\n') || 'No offers'}`);
+                }}
+                style={{
+                  marginTop: '8px',
+                  padding: '6px 12px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Show All Offers in System
+              </button>
+            </div>
+          </div>
           
           <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

@@ -306,11 +306,33 @@ const OfferModule = ({ user }) => {
   const sendOffer = async (offerId) => {
     if (!window.confirm('Möchten Sie dieses Angebot wirklich an den Kunden versenden?')) return;
 
-    const updatedOffers = offers.map(o => 
-      o.id === offerId ? { ...o, status: 'versendet', sent_at: Date.now() } : o
-    );
+    const offer = offers.find(o => o.id === offerId);
+    if (!offer) return;
+
+    const updatedOffer = { ...offer, status: 'versendet', sent_at: Date.now() };
+    
+    // Update local state
+    const updatedOffers = offers.map(o => o.id === offerId ? updatedOffer : o);
     setOffers(updatedOffers);
     localStorage.setItem('admin_offers', JSON.stringify(updatedOffers));
+    
+    // Update database
+    try {
+      const response = await fetch(`${API_BASE_URL}/offers/${offerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await authService.getValidToken()}`
+        },
+        body: JSON.stringify(updatedOffer)
+      });
+      
+      if (response.ok) {
+        console.log('Offer sent to database successfully');
+      }
+    } catch (error) {
+      console.log('Database update failed, saved locally:', error);
+    }
     
     alert('Angebot wurde als versendet markiert!');
   };

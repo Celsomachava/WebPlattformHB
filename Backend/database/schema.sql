@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Offers Table
-CREATE TABLE IF NOT EXISTS offers (
+CREATE TABLE IF NOT EXISTS angebote (
   id VARCHAR(36) PRIMARY KEY,
   nummer VARCHAR(50) UNIQUE NOT NULL,
   kunden_id VARCHAR(50) NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS offer_positions (
   einzelpreis DECIMAL(10, 2) NOT NULL,
   gesamtpreis DECIMAL(10, 2) NOT NULL,
   INDEX idx_offer_id (offer_id),
-  FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE
+  FOREIGN KEY (offer_id) REFERENCES angebote(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Invoices Table
