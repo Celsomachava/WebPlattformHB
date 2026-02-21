@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import './styles/App.css';
 import { authService } from './services/simple-auth';
 import ServiceRequestForm from './components/customer/form/ServiceRequestForm';
+import AdminServiceRequestForm from './components/admin/AdminServiceRequestForm';
+import CustomerServiceRequestForm from './components/customer/CustomerServiceRequestForm';
 import OfferModule from './components/admin/OfferModule';
 import InvoiceModule from './components/admin/InvoiceModule';
 import KundenAnlegen from './components/admin/KundenAnlegen';
@@ -995,7 +997,7 @@ function App() {
           {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
         </style>
         <h2 style={{ color: 'white', fontSize: '24px', fontWeight: '600', margin: 0 }}>Heduschka Service</h2>
-        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '10px' }}>Loading...</p>
+        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '10px' }}>Wird geladen...</p>
       </div>
     );
   }
@@ -1029,7 +1031,11 @@ function App() {
           <Route path="/profile" element={<ProfileSettings user={user} />} />
           
           <Route path="/customer/portal/service-request" element={
-            <ServiceRequestForm user={user} />
+            <CustomerServiceRequestForm user={user} />
+          } />
+          
+          <Route path="/admin/portal/service-request" element={
+            <AdminServiceRequestForm user={user} />
           } />
         </Routes>
       </div>
