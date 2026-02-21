@@ -354,7 +354,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   };
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '30px', background: '#f8f9fa', minHeight: 'calc(100vh - 60px)' }}>
+    <div style={{ marginLeft: '-280px', marginTop: '60px', padding: '30px', background: '#f8f9fa', minHeight: 'calc(100vh - 60px)' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ marginBottom: '30px' }}>
           <h1 style={{ margin: '0 0 8px 0', color: '#2c3e50', fontSize: '28px', fontWeight: '600' }}>Serviceanfrage erstellen</h1>
