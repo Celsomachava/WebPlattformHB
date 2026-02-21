@@ -976,12 +976,26 @@ function App() {
     return (
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        fontSize: '18px'
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       }}>
-        Lade VIBE Plattform...
+        <div style={{
+          width: '60px',
+          height: '60px',
+          border: '4px solid rgba(255, 255, 255, 0.3)',
+          borderTop: '4px solid #007bff',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          marginBottom: '20px'
+        }} />
+        <style>
+          {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+        </style>
+        <h2 style={{ color: 'white', fontSize: '24px', fontWeight: '600', margin: 0 }}>Heduschka Service</h2>
+        <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '10px' }}>Loading...</p>
       </div>
     );
   }

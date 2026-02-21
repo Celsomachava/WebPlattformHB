@@ -5,6 +5,9 @@ const CustomerOfferView = ({ user }) => {
   const [offers, setOffers] = useState([]);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingOfferId, setRejectingOfferId] = useState(null);
 
   useEffect(() => {
     loadOffers();
@@ -50,16 +53,30 @@ const CustomerOfferView = ({ user }) => {
   };
 
   const handleReject = async (id) => {
-    const reason = prompt('Grund für Ablehnung:');
-    if (!reason) return;
+    setRejectingOfferId(id);
+    setShowRejectModal(true);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectReason.trim()) {
+      alert('Bitte geben Sie einen Grund für die Ablehnung an');
+      return;
+    }
     try {
-      await fetch(`/api/angebote/${id}/reject`, {
+      await fetch(`/api/angebote/${rejectingOfferId}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await authService.getValidToken()}` 
+        },
+        body: JSON.stringify({ reason: rejectReason })
       });
       alert('Angebot abgelehnt');
       loadOffers();
       setSelectedOffer(null);
+      setShowRejectModal(false);
+      setRejectReason('');
+      setRejectingOfferId(null);
     } catch (error) {
       alert('Fehler beim Ablehnen');
     }
@@ -162,6 +179,79 @@ const CustomerOfferView = ({ user }) => {
   return (
     <div>
       <h2 style={{ marginBottom: '20px' }}>Meine Angebote</h2>
+      
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '30px',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0' }}>Grund für Ablehnung</h3>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Bitte geben Sie den Grund für die Ablehnung an..."
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px',
+                resize: 'vertical',
+                marginBottom: '20px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectReason('');
+                  setRejectingOfferId(null);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #6c757d',
+                  background: 'white',
+                  color: '#6c757d',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={confirmReject}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  background: '#dc3545',
+                  color: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Ablehnen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {offers.length === 0 ? (
         <div style={{ background: 'white', borderRadius: '8px', padding: '40px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
