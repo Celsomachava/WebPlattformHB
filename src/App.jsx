@@ -117,10 +117,6 @@ const AdminDashboard = ({ user, activeTab, setActiveTab }) => {
 
   return (
     <div style={{ marginLeft: '260px', marginTop: '60px', padding: '30px', maxWidth: 'calc(100vw - 260px)', background: '#f5f7fa', minHeight: 'calc(100vh - 60px)' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Admin Dashboard</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, Administrator</p>
-      </div>
 
       {activeTab === 'overview' && (
         <div>
@@ -311,10 +307,6 @@ const CustomerPortal = ({ user, activeTab, setActiveTab }) => {
 
   return (
     <div style={{ marginLeft: '260px', marginTop: '60px', padding: '30px', maxWidth: 'calc(100vw - 260px)', background: '#f5f7fa', minHeight: 'calc(100vh - 60px)' }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Kundenportal</h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, {user?.id || user?.name}</p>
-      </div>
 
       {activeTab === 'overview' && (
         <div>
