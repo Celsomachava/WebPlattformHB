@@ -28,6 +28,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   const fileInputRef = useRef(null);
 
   const isCustomer = user?.role === 'KUNDE_XXX';
+  const isAdmin = user?.role === 'admin' || user?.id === 'ADMIN_001';
 
   useEffect(() => {
     const kundenId = user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id;
@@ -390,6 +391,48 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           marginBottom: '20px'
         }}>
+          {/* Customer Filter - Admin Only */}
+          {isAdmin && (
+            <div style={{ marginBottom: '40px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>Kundenauswahl</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kunde auswählen *</label>
+                  <select 
+                    value={formData.kunden_id} 
+                    onChange={(e) => {
+                      const kundenId = e.target.value;
+                      setFormData(prev => ({ ...prev, kunden_id: kundenId }));
+                      loadCustomerData(kundenId);
+                    }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                  >
+                    <option value="">Bitte wählen...</option>
+                    {clients.map(client => (
+                      <option key={client.kundennummer} value={client.kundennummer}>
+                        {client.kundennummer} - {client.firmenname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Oder Kunden-ID eingeben</label>
+                  <input 
+                    type="text"
+                    value={formData.kunden_id}
+                    onChange={(e) => {
+                      const kundenId = e.target.value;
+                      setFormData(prev => ({ ...prev, kunden_id: kundenId }));
+                      if (kundenId) loadCustomerData(kundenId);
+                    }}
+                    placeholder="z.B. KUNDE_001"
+                    style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Kundendaten */}
           <div style={{ marginBottom: '40px' }}>
             <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>1. Kundendaten</h3>
