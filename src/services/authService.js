@@ -1,58 +1,77 @@
+import { apiService } from './api.js';
+
 class AuthService {
   constructor() {
-    this.token = localStorage.getItem('auth_token');
+    this.token = localStorage.getItem('heduschka_token');
+    this.user = null;
   }
 
-  // Set authentication token
-  setToken(token) {
-    this.token = token;
-    localStorage.setItem('auth_token', token);
-  }
-
-  // Get current token
-  getToken() {
-    return this.token || localStorage.getItem('auth_token');
-  }
-
-  // Check if user is authenticated
-  isAuthenticated() {
-    return !!this.getToken();
-  }
-
-  // Simple token validation (customer user)
-  async validateToken(token) {
+  async login(userId, password) {
     try {
-      // In real implementation, this would call the backend
-      // For MVP, we'll use a simple validation
-      if (token && token.startsWith('KUNDE_')) {
-        this.setToken(token);
-        return { valid: true, role: 'customer' };
+      const response = await apiService.login(userId, password);
+      this.token = response.token;
+      this.user = response.user;
+      localStorage.setItem('heduschka_token', response.token);
+      localStorage.setItem('heduschka_user', JSON.stringify(response.user));
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  }
+
+  async validateToken() {
+    try {
+      if (!this.token) return { valid: false };
+      const response = await apiService.validateToken(this.token);
+      if (response.valid) {
+        this.user = response.user;
+        localStorage.setItem('heduschka_user', JSON.stringify(response.user));
       }
-      if (token && token.startsWith('ADMIN_')) {
-        this.setToken(token);
-        return { valid: true, role: 'admin' };
-      }
-      return { valid: false };
+      return response;
     } catch (error) {
       console.error('Token validation failed:', error);
       return { valid: false };
     }
   }
 
-  // Logout
-  logout() {
-    this.token = null;
-    localStorage.removeItem('auth_token');
+  async getCurrentUser() {
+    try {
+      if (!this.token) return null;
+      const user = await apiService.getCurrentUser();
+      this.user = user;
+      localStorage.setItem('heduschka_user', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      console.error('Get current user failed:', error);
+      return null;
+    }
   }
 
-  // Get user role from token
+  getToken() {
+    return this.token || localStorage.getItem('heduschka_token');
+  }
+
+  getUser() {
+    if (this.user) return this.user;
+    const stored = localStorage.getItem('heduschka_user');
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  isAuthenticated() {
+    return !!this.getToken();
+  }
+
   getUserRole() {
-    const token = this.getToken();
-    if (!token) return null;
-    
-    if (token.startsWith('ADMIN_')) return 'admin';
-    if (token.startsWith('KUNDE_')) return 'customer';
-    return 'customer'; // default
+    const user = this.getUser();
+    return user?.role || 'customer';
+  }
+
+  logout() {
+    this.token = null;
+    this.user = null;
+    localStorage.removeItem('heduschka_token');
+    localStorage.removeItem('heduschka_user');
   }
 }
 

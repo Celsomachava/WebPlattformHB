@@ -1,1 +1,234 @@
-# Heduschka Service Form PWA\n\n🔒 **Sichere Progressive Web App für digitale Serviceanfragen**\n\nEine offline-fähige PWA für Heduschka GmbH Kunden zur digitalen Erfassung von Filter-Serviceanfragen mit automatischer Synchronisation.\n\n## 🚀 Features\n\n- ✅ **Offline-First**: Vollständige Funktionalität ohne Internetverbindung\n- 🔐 **Sicherheit**: Token-basierte Authentifizierung, HTTPS, Datenverschlüsselung\n- 📱 **PWA**: Installierbar auf allen Geräten, App-ähnliche Erfahrung\n- 🔄 **Auto-Sync**: Automatische Synchronisation bei Wiederherstellung der Verbindung\n- 🛡️ **DSGVO-konform**: Datenschutz-Einverständnis, minimale Datenspeicherung\n- 📊 **Performance**: Optimiert für schnelle Ladezeiten und mobile Nutzung\n\n## 🛠️ Setup & Installation\n\n### Voraussetzungen\n- Node.js 16+ \n- npm oder yarn\n- Moderner Browser mit PWA-Unterstützung\n\n### Installation\n\n```bash\n# Repository klonen\ngit clone <repository-url>\ncd WebPlattformH\n\n# Dependencies installieren\nnpm install\n\n# Entwicklungsserver starten\nnpm run dev\n```\n\nDie Anwendung ist dann unter `http://localhost:3000` verfügbar.\n\n### Demo-Anmeldung\n\n- **Kunde**: `KUNDE_001`\n- **Admin**: `ADMIN_001`\n\n## 🧪 Testing\n\n### Unit Tests\n\n```bash\n# Alle Tests ausführen\nnpm test\n\n# Tests im Watch-Modus\nnpm run test:watch\n\n# Test-Coverage generieren\nnpm run test:coverage\n```\n\n### E2E Tests\n\n```bash\n# Cypress UI öffnen\nnpm run test:e2e\n\n# Headless E2E Tests\nnpm run test:e2e:headless\n\n# Offline-Tests spezifisch\nnpm run test:offline\n```\n\n### Manuelle Tests\n\n#### 📴 Offline-Funktionalität testen\n\n1. **Browser DevTools öffnen** (F12)\n2. **Network Tab** → **Offline** aktivieren\n3. Formular ausfüllen und absenden\n4. ✅ Erfolgsmeldung sollte erscheinen\n5. **Online** wieder aktivieren\n6. ✅ Automatische Synchronisation sollte starten\n\n#### 📱 Mobile Testing\n\n1. **DevTools** → **Device Toolbar** (Ctrl+Shift+M)\n2. **iPhone/Android** Viewport wählen\n3. Formular-Navigation testen\n4. Touch-Interaktionen prüfen\n5. PWA-Installation testen\n\n#### 🔄 Sync-Verhalten testen\n\n1. Offline gehen (DevTools Network → Offline)\n2. Mehrere Formulare ausfüllen\n3. Status-Indikator prüfen (\"X ausstehend\")\n4. Online gehen\n5. Sync-Status beobachten (\"Synchronisiert...\")\n6. Erfolgs-Benachrichtigung abwarten\n\n## 🏗️ Build & Deployment\n\n### Production Build\n\n```bash\n# Build für Production\nnpm run build\n\n# Build testen\nnpm run preview\n\n# Build + Tests + Deployment\nnpm run deploy:build\n```\n\n### Performance Audit\n\n```bash\n# Lighthouse Audit (Desktop)\nnpm run audit\n\n# Mobile Performance Test\nnpm run lighthouse:mobile\n\n# Bundle Analyse\nnpm run analyze\n```\n\n### Deployment Checklist\n\n- [ ] ✅ Alle Tests bestanden (`npm test`)\n- [ ] 🚀 Build erfolgreich (`npm run build`)\n- [ ] 📊 Lighthouse Score > 90\n- [ ] 📱 Mobile Tests bestanden\n- [ ] 🔒 HTTPS konfiguriert\n- [ ] 🛡️ Security Headers gesetzt\n- [ ] 📋 PWA Manifest validiert\n\n## 🔧 Entwicklung\n\n### Projektstruktur\n\n```\nsrc/\n├── components/          # React Komponenten\n│   ├── auth/           # Authentifizierung\n│   ├── formSections/   # Formular-Sektionen\n│   └── ui/             # UI Komponenten\n├── hooks/              # Custom React Hooks\n├── services/           # Business Logic\n│   ├── db.ts          # IndexedDB Service\n│   ├── syncService.ts # Sync Engine\n│   └── authService.js # Authentifizierung\n├── utils/              # Hilfsfunktionen\n└── tests/              # Unit Tests\n```\n\n### Wichtige Services\n\n- **`optimizedDB.js`**: IndexedDB mit Performance-Optimierungen\n- **`syncService.ts`**: Offline-Sync Engine mit Retry-Logic\n- **`authService.js`**: Token-basierte Authentifizierung\n- **`security.js`**: Sicherheits-Utilities und DSGVO-Compliance\n\n## 📋 Formular-Struktur\n\n1. **🔒 Kundendaten** (schreibgeschützt)\n   - Kunden-ID, Name, Kontaktdaten\n   \n2. **🏭 Anlagendaten**\n   - Anlagentyp, Anlagen-ID, Standort\n   - QR-Code Scanner (Platzhalter)\n   \n3. **🔧 Serviceangaben**\n   - Serviceart, Dringlichkeit, Beschreibung\n   - Wunschtermin\n   \n4. **📎 Zusatzinformationen**\n   - Bemerkungen, Fotos (max. 5)\n   \n5. **📋 DSGVO-Einverständnis**\n   - Datenschutz-Zustimmung (erforderlich)\n   - AGB-Akzeptanz (erforderlich)\n\n## 🔒 Sicherheit\n\n### Implementierte Sicherheitsmaßnahmen\n\n- 🔐 **Token-basierte Authentifizierung**\n- 🛡️ **HTTPS-Erzwingung**\n- 🔒 **Datenverschlüsselung** (sensitive Felder)\n- 👤 **Benutzer-Validierung** (kunden_id)\n- 🚫 **XSS-Schutz** (Input-Sanitization)\n- 📋 **DSGVO-Compliance**\n\n### Datenschutz\n\n- Minimale Datenspeicherung\n- Verschlüsselte lokale Speicherung\n- Automatische Cache-Bereinigung\n- Explizite Einverständniserklärungen\n\n## 📊 Performance\n\n### Optimierungen\n\n- ⚡ **Code Splitting** (Lazy Loading)\n- 🗄️ **Service Worker Caching**\n- 💾 **IndexedDB Optimierung**\n- 🎯 **React Memoization**\n- 📱 **Mobile-First Design**\n\n### Ziel-Metriken\n\n- First Contentful Paint < 1.5s\n- Largest Contentful Paint < 2.5s\n- Time to Interactive < 3.5s\n- PWA Score: 100%\n\n## 🐛 Troubleshooting\n\n### Häufige Probleme\n\n**❌ Weißer Bildschirm**\n```bash\n# Cache leeren und neu starten\nnpm run build\nnpm run preview\n```\n\n**❌ Offline-Sync funktioniert nicht**\n- Browser-DevTools → Application → Storage → IndexedDB prüfen\n- Service Worker Status überprüfen\n- Network-Tab für API-Calls kontrollieren\n\n**❌ PWA Installation nicht möglich**\n- HTTPS erforderlich (außer localhost)\n- Manifest.json validieren\n- Service Worker registriert?\n\n### Debug-Modus\n\n```javascript\n// Browser-Konsole\nimport { performanceMonitor, runOfflineTests } from './src/utils/performance';\n\n// Performance-Metriken anzeigen\nperformanceMonitor.getMetrics();\n\n// Offline-Tests ausführen\nrunOfflineTests();\n```\n\n## 📞 Support\n\nBei Fragen oder Problemen:\n\n1. 📖 Diese Dokumentation prüfen\n2. 🧪 Tests ausführen (`npm test`)\n3. 🔍 Browser-DevTools für Fehleranalyse\n4. 📊 Lighthouse-Audit für Performance-Probleme\n\n---\n\n**© 2024 Heduschka GmbH** • 🛡️ DSGVO-konform • 🔐 SSL-verschlüsselt
+# Heduschka Service Platform
+
+🔒 **Digitale Plattform für Serviceanfragen, Angebote und Rechnungen**
+
+Vollständige Geschäftslösung für Heduschka GmbH mit Kundenportal und Admin-Dashboard zur Verwaltung von Serviceanfragen, Angeboten, Rechnungen und DATEV-Export.
+
+## 🚀 Features
+
+### Kundenportal
+- 📋 **Serviceanfragen**: Digitale Erfassung von Filter-Serviceanfragen
+- 📄 **Angebote**: Anzeige und Annahme/Ablehnung von Angeboten
+- 🧾 **Rechnungen**: Übersicht aller Rechnungen mit Gesamtkosten
+- 👤 **Profileinstellungen**: Anzeige Kundendaten und Passwort ändern
+
+### Admin-Dashboard
+- 📊 **Übersicht**: Dashboard mit Statistiken und Kennzahlen
+- 📝 **Serviceanfragen**: Verwaltung eingehender Anfragen
+- 💼 **Angebote**: Erstellung und Verwaltung von Angeboten
+- 💰 **Rechnungen**: Rechnungserstellung aus angenommenen Angeboten
+- 📤 **DATEV Export**: Export für Buchhaltungssoftware
+- 🔧 **Arbeitsaufträge**: Verwaltung von Arbeitsaufträgen
+
+### Sicherheit & Compliance
+- 🔐 **Token-basierte Authentifizierung**
+- 🛡️ **DSGVO-konform**: Datenschutz-Einverständnis
+- 🔒 **Sichere Datenübertragung**: HTTPS
+
+## 🛠️ Setup & Installation
+
+### Voraussetzungen
+- Node.js 16+ 
+- npm oder yarn
+- MySQL Datenbank
+- Moderner Browser
+
+### Installation
+
+```bash
+# Repository klonen
+git clone <repository-url>
+cd WebPlattformHB
+
+# Frontend Dependencies installieren
+npm install
+
+# Backend Dependencies installieren
+cd Backend
+npm install
+cd ..
+
+# Backend starten (Port 3002)
+cd Backend
+node server.js
+
+# Frontend starten (Port 3000)
+npm run dev
+```
+
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:3002`
+
+### Anmeldung
+
+- **Kunde**: Kundennummer (z.B. `K001`)
+- **Admin**: `ADMIN_001`
+
+## 🧪 Testing
+
+### Manuelle Tests
+
+#### Kundenportal testen
+1. Mit Kundennummer anmelden
+2. Serviceanfrage erstellen
+3. Angebote anzeigen und annehmen/ablehnen
+4. Rechnungen überprüfen
+5. Profileinstellungen öffnen
+
+#### Admin-Dashboard testen
+1. Mit ADMIN_001 anmelden
+2. Serviceanfragen verwalten
+3. Angebot erstellen
+4. Rechnung aus angenommenem Angebot erstellen
+5. DATEV Export durchführen
+
+## 🏗️ Build & Deployment
+
+### Production Build
+
+```bash
+# Build für Production
+npm run build
+
+# Build testen
+npm run preview
+```
+
+### Deployment Checklist
+
+- [ ] 🚀 Build erfolgreich (`npm run build`)
+- [ ] 🔒 HTTPS konfiguriert
+- [ ] 🛡️ Security Headers gesetzt
+- [ ] 💾 Datenbank-Backup erstellt
+
+## 🔧 Entwicklung
+
+### Projektstruktur
+
+```
+WebPlattformHB/
+├── src/
+│   ├── components/
+│   │   ├── admin/              # Admin-Dashboard Komponenten
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── InvoiceModule.jsx
+│   │   │   ├── OfferModule.jsx
+│   │   │   └── ArbeitsauftragModule.tsx
+│   │   ├── customer/           # Kundenportal Komponenten
+│   │   │   ├── CustomerPortal.jsx
+│   │   │   ├── CustomerOfferView.jsx
+│   │   │   ├── CustomerInvoiceView.jsx
+│   │   │   └── form/
+│   │   │       └── ServiceRequestForm.jsx
+│   │   ├── profile/            # Profileinstellungen
+│   │   │   └── ProfileSettings.jsx
+│   │   └── auth/               # Authentifizierung
+│   ├── services/               # Business Logic
+│   │   ├── authService.js
+│   │   └── arbeitsauftragService.ts
+│   └── utils/                  # Hilfsfunktionen
+├── Backend/
+│   ├── server.js               # Express Server
+│   ├── routes/
+│   │   ├── offers.js           # Angebote API
+│   │   ├── invoices.js         # Rechnungen API
+│   │   └── serviceanfragen.js  # Serviceanfragen API
+│   └── db.js                   # MySQL Datenbankverbindung
+└── README.md
+```
+
+### Backend API Endpoints
+
+#### Angebote
+- `GET /api/angebote` - Alle Angebote
+- `GET /api/angebote/kunde/:kundenId` - Angebote eines Kunden
+- `POST /api/angebote/:id/accept` - Angebot annehmen
+- `POST /api/angebote/:id/reject` - Angebot ablehnen
+
+#### Rechnungen
+- `GET /api/rechnungen` - Alle Rechnungen
+- `GET /api/rechnungen/kunde/:kundenId` - Rechnungen eines Kunden
+- `POST /api/rechnungen` - Rechnung erstellen
+
+#### Kunden
+- `GET /api/kunden/:kundenId` - Kundendaten abrufen
+
+### Wichtige Hinweise
+
+- **Dezimalwerte**: MySQL gibt Dezimalwerte als Strings zurück → `parseFloat()` verwenden
+- **Datumsformate**: ISO-Daten mit `new Date().toLocaleDateString('de-DE')` formatieren
+- **Rechnungsnummern**: Sequentielle Generierung basierend auf existierenden Rechnungen
+
+## 📋 Datenmodell
+
+### Kunden (customers)
+- `kundennummer` - Eindeutige Kundennummer
+- `firmenname` - Firmenname
+- `ansprechpartner` - Kontaktperson
+- `email` - E-Mail-Adresse
+- `telefon` - Telefonnummer
+
+### Angebote (angebote)
+- `angebots_nummer` - Eindeutige Angebotsnummer
+- `kunden_id` - Referenz zum Kunden
+- `netto`, `mwst`, `brutto` - Preise (DECIMAL)
+- `gueltig_bis` - Gültigkeitsdatum
+- `status` - offen/angenommen/abgelehnt
+
+### Rechnungen (invoices)
+- `rechnungs_nummer` - Eindeutige Rechnungsnummer
+- `kunden_id` - Referenz zum Kunden
+- `netto`, `mwst_betrag`, `brutto` - Beträge (DECIMAL)
+- `faellig_am` - Fälligkeitsdatum
+- `status` - offen/bezahlt/überfällig
+
+## 🔒 Sicherheit
+
+- 🔐 **Token-basierte Authentifizierung**
+- 👤 **Benutzer-Validierung** (Kundennummer/Admin-ID)
+- 🛡️ **HTTPS-Erzwingung** (Production)
+- 📋 **DSGVO-Compliance**
+
+## 🎨 Design-Prinzipien
+
+- ✨ **Minimalistisch**: Klare, aufgeräumte Benutzeroberfläche
+- 📊 **Datenorientiert**: Label-Value Card Layouts für Read-Only Daten
+- 🎯 **Funktional**: Fokus auf Benutzerfreundlichkeit statt Dekoration
+- 📱 **Responsive**: Optimiert für Desktop und Mobile
+
+## 🐛 Troubleshooting
+
+### Häufige Probleme
+
+**❌ Backend-Verbindung fehlgeschlagen**
+```bash
+# Backend-Server prüfen
+cd Backend
+node server.js
+# Sollte auf Port 3002 laufen
+```
+
+**❌ Dezimalwerte werden falsch angezeigt**
+- MySQL gibt DECIMAL als String zurück
+- Lösung: `parseFloat(value).toFixed(2)` verwenden
+
+**❌ Datum im falschen Format**
+- ISO-Format von DB: `2026-03-20T18:30:00.000Z`
+- Lösung: `new Date(date).toLocaleDateString('de-DE')`
+
+**❌ Doppelte Rechnungsnummern**
+- Sequentielle Generierung prüfen
+- Existierende Rechnungen vor Erstellung laden
+
+## 📞 Support
+
+Bei Fragen oder Problemen:
+
+1. 📖 Diese Dokumentation prüfen
+2. 🔍 Browser-DevTools → Console für Fehleranalyse
+3. 🌐 Network-Tab für API-Calls überprüfen
+4. 💾 Backend-Logs in Terminal kontrollieren
+
+---
+
+**© 2026 Heduschka GmbH** • 🛡️ DSGVO-konform • 🔐 SSL-verschlüsselt

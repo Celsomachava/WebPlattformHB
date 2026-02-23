@@ -227,20 +227,13 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1>Admin Dashboard</h1>
-        <button onClick={onLogout} style={{
-          padding: '8px 16px',
-          background: '#dc3545',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
-          Abmelden
-        </button>
-      </div>
+      {/* Header - Only show on dashboard tab */}
+      {activeTab === 'dashboard' && (
+        <div style={{ marginBottom: '30px' }}>
+          <h1 style={{ margin: '0 0 8px 0' }}>Admin Dashboard</h1>
+          <p style={{ color: '#6c757d', margin: 0 }}>Willkommen, Administrator</p>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div style={{ 

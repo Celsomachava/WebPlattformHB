@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
 import { invoiceHistoryService } from '../../services/offerHistoryService';
+import { API_BASE_URL } from '../../config/api';
 
 const InvoiceModule = ({ user }) => {
   const [activeView, setActiveView] = useState('list');
@@ -36,81 +37,189 @@ const InvoiceModule = ({ user }) => {
   ];
 
   useEffect(() => {
-    loadInvoices();
-    loadAcceptedOffers();
-    loadClients();
+    let timeoutId;
+    const loadInvoices = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/invoices`, {
+          headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const parsed = data.map(inv => ({
+            ...inv,
+            positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+            netto: parseFloat(inv.netto) || 0,
+            mwst_betrag: parseFloat(inv.mwst) || 0,
+            brutto: parseFloat(inv.brutto) || 0,
+            faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+          }));
+          setInvoices(parsed);
+          localStorage.setItem('admin_invoices', JSON.stringify(parsed));
+        }
+      } catch (error) {
+        const cached = localStorage.getItem('admin_invoices');
+        const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
+        
+        let allInvoices = [];
+        if (cached) allInvoices = JSON.parse(cached);
+        if (pending.length > 0) {
+          const uniquePending = pending.filter(p => 
+            !allInvoices.some(inv => inv.id === p.id)
+          );
+          allInvoices = [...allInvoices, ...uniquePending];
+        }
+        
+        const parsed = allInvoices.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+        }));
+        setInvoices(parsed);
+      }
+    };
+
+    const loadAcceptedOffers = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/offers?status=angenommen`, {
+          headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const parsed = data.map(o => ({
+            ...o,
+            positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+            netto: parseFloat(o.netto) || 0,
+            mwst_betrag: parseFloat(o.mwst) || 0,
+            brutto: parseFloat(o.brutto) || 0
+          }));
+          const uninvoiced = parsed.filter(offer => 
+            !offer.invoiced && !invoices.some(inv => inv.angebot_id === offer.id)
+          );
+          setOffers(uninvoiced);
+        }
+      } catch (error) {
+        const cached = localStorage.getItem('admin_offers');
+        if (cached) {
+          const allOffers = JSON.parse(cached);
+          const acceptedOffers = allOffers.map(o => ({
+            ...o,
+            positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+            netto: parseFloat(o.netto) || 0,
+            mwst_betrag: parseFloat(o.mwst) || 0,
+            brutto: parseFloat(o.brutto) || 0
+          })).filter(o => 
+            o.status === 'angenommen' && 
+            !o.invoiced && 
+            !invoices.some(inv => inv.angebot_id === o.id)
+          );
+          setOffers(acceptedOffers);
+        }
+      }
+    };
+
+    const loadClients = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/customer`, {
+          headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setClients(data);
+        }
+      } catch (error) {
+        const cached = localStorage.getItem('admin_clients');
+        if (cached) setClients(JSON.parse(cached));
+        
+        const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
+        if (pending.length > 0) {
+          setClients(prev => [...prev, ...pending]);
+        }
+      }
+    };
+
+    const loadAll = async () => {
+      await loadInvoices();
+      await loadAcceptedOffers();
+      await loadClients();
+    };
+
+    timeoutId = setTimeout(loadAll, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const loadInvoices = async () => {
     try {
-      const response = await fetch('/api/rechnungen', {
+      const response = await fetch(`${API_BASE_URL}/invoices`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data);
-        localStorage.setItem('admin_invoices', JSON.stringify(data));
+        const parsed = data.map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+        }));
+        setInvoices(parsed);
+        localStorage.setItem('admin_invoices', JSON.stringify(parsed));
       }
     } catch (error) {
       const cached = localStorage.getItem('admin_invoices');
-      const pending = JSON.parse(localStorage.getItem('pending_invoices') || '[]');
-      
-      let allInvoices = [];
-      if (cached) allInvoices = JSON.parse(cached);
-      if (pending.length > 0) {
-        const uniquePending = pending.filter(p => 
-          !allInvoices.some(inv => inv.id === p.id)
-        );
-        allInvoices = [...allInvoices, ...uniquePending];
+      if (cached) {
+        const parsed = JSON.parse(cached).map(inv => ({
+          ...inv,
+          positionen: typeof inv.positionen === 'string' ? JSON.parse(inv.positionen) : inv.positionen,
+          netto: parseFloat(inv.netto) || 0,
+          mwst_betrag: parseFloat(inv.mwst) || 0,
+          brutto: parseFloat(inv.brutto) || 0,
+          faellig_am: inv.faellig_am ? new Date(inv.faellig_am).toLocaleDateString('de-DE') : ''
+        }));
+        setInvoices(parsed);
       }
-      
-      setInvoices(allInvoices);
     }
   };
 
   const loadAcceptedOffers = async () => {
     try {
-      const response = await fetch('/api/angebote?status=angenommen', {
+      const response = await fetch(`${API_BASE_URL}/offers?status=angenommen`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
         const data = await response.json();
-        const uninvoiced = data.filter(offer => 
+        const parsed = data.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        }));
+        const uninvoiced = parsed.filter(offer => 
           !offer.invoiced && !invoices.some(inv => inv.angebot_id === offer.id)
         );
         setOffers(uninvoiced);
       }
     } catch (error) {
-      // Load from localStorage (offline-first)
       const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
-        const acceptedOffers = allOffers.filter(o => 
+        const acceptedOffers = allOffers.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        })).filter(o => 
           o.status === 'angenommen' && 
           !o.invoiced && 
           !invoices.some(inv => inv.angebot_id === o.id)
         );
         setOffers(acceptedOffers);
-      }
-    }
-  };
-
-  const loadClients = async () => {
-    try {
-      const response = await fetch('/api/kunden', {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data);
-      }
-    } catch (error) {
-      const cached = localStorage.getItem('admin_clients');
-      if (cached) setClients(JSON.parse(cached));
-      
-      const pending = JSON.parse(localStorage.getItem('pending_customers') || '[]');
-      if (pending.length > 0) {
-        setClients(prev => [...prev, ...pending]);
       }
     }
   };
@@ -122,32 +231,54 @@ const InvoiceModule = ({ user }) => {
     }
     
     try {
-      const response = await fetch(`/api/angebote?kunden_id=${kundenId}&status=angenommen`, {
+      const response = await fetch(`${API_BASE_URL}/offers?kunden_id=${kundenId}`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
         const data = await response.json();
-        setClientOffers(data.filter(offer => !invoices.some(inv => inv.angebot_id === offer.id)));
+        const parsed = data.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        }));
+        const validOffers = parsed.filter(offer => 
+          (offer.status === 'angenommen' || offer.status === 'versendet') &&
+          !invoices.some(inv => inv.angebot_id === offer.id)
+        );
+        setClientOffers(validOffers);
       }
     } catch (error) {
-      // Load from localStorage (offline-first)
       const cached = localStorage.getItem('admin_offers');
       if (cached) {
         const allOffers = JSON.parse(cached);
-        const clientAcceptedOffers = allOffers.filter(o => 
+        const clientValidOffers = allOffers.map(o => ({
+          ...o,
+          positionen: typeof o.positionen === 'string' ? JSON.parse(o.positionen) : o.positionen,
+          netto: parseFloat(o.netto) || 0,
+          mwst_betrag: parseFloat(o.mwst) || 0,
+          brutto: parseFloat(o.brutto) || 0
+        })).filter(o => 
           o.kunden_id === kundenId && 
-          o.status === 'angenommen' && 
+          (o.status === 'angenommen' || o.status === 'versendet') && 
           !invoices.some(inv => inv.angebot_id === o.id)
         );
-        setClientOffers(clientAcceptedOffers);
+        setClientOffers(clientValidOffers);
       }
     }
   };
 
   const generateInvoiceNumber = () => {
     const year = new Date().getFullYear();
-    const count = invoices.length + 1;
-    return `RE-${year}-${String(count).padStart(4, '0')}`;
+    const existingNumbers = invoices
+      .filter(inv => inv.nummer?.startsWith(`RE-${year}-`))
+      .map(inv => {
+        const match = inv.nummer.match(/RE-\d{4}-(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      });
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    return `RE-${year}-${String(maxNumber + 1).padStart(4, '0')}`;
   };
 
   const createInvoiceFromOffer = (offer) => {
@@ -221,7 +352,7 @@ const InvoiceModule = ({ user }) => {
       }
 
       try {
-        const response = await fetch('/api/rechnungen', {
+        const response = await fetch(`${API_BASE_URL}/invoices`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -268,7 +399,7 @@ const InvoiceModule = ({ user }) => {
       localStorage.setItem('pending_invoices', JSON.stringify(updatedPending));
 
       try {
-        const response = await fetch(`/api/rechnungen/${invoiceId}/status`, {
+        const response = await fetch(`${API_BASE_URL}/invoices/${invoiceId}/status`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -299,7 +430,7 @@ const InvoiceModule = ({ user }) => {
   const generatePDF = async (invoice) => {
     try {
       // Check if PDF service is available
-      const response = await fetch(`/api/rechnungen/${invoice.id}/pdf`, {
+      const response = await fetch(`${API_BASE_URL}/invoices/${invoice.id}/pdf`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       

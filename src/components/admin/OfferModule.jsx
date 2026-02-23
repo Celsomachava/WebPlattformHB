@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/simple-auth';
 import { offerHistoryService } from '../../services/offerHistoryService';
 import InvoiceStyleForm from './InvoiceStyleForm';
+import { API_BASE_URL } from '../../config/api';
 
 const OfferModule = ({ user }) => {
   const [activeView, setActiveView] = useState('list');
@@ -34,23 +35,30 @@ const OfferModule = ({ user }) => {
   ];
 
   useEffect(() => {
-    loadOffers();
-    loadServiceRequests();
-    loadInstallations();
-    loadClients();
+    const initData = async () => {
+      await loadOffers();
+      await loadServiceRequests();
+      await loadInstallations();
+      await loadClients();
+    };
+    initData();
   }, []);
 
   const loadOffers = async () => {
     try {
-      const response = await fetch('/api/angebote', {
-        headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
+      const token = await authService.getValidToken();
+      const response = await fetch(`${API_BASE_URL}/offers`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setOffers(data);
-        localStorage.setItem('admin_offers', JSON.stringify(data));
-      }
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      console.log('Loaded offers from database:', data);
+      setOffers(data);
+      localStorage.setItem('admin_offers', JSON.stringify(data));
     } catch (error) {
+      console.error('Error loading offers:', error);
       const cached = localStorage.getItem('admin_offers');
       if (cached) setOffers(JSON.parse(cached));
     }
@@ -94,7 +102,7 @@ const OfferModule = ({ user }) => {
 
   const loadServiceRequests = async () => {
     try {
-      const response = await fetch('/api/serviceanfragen', {
+      const response = await fetch(`${API_BASE_URL}/serviceanfragen`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
@@ -108,7 +116,7 @@ const OfferModule = ({ user }) => {
 
   const loadInstallations = async () => {
     try {
-      const response = await fetch('/api/anlagen', {
+      const response = await fetch(`${API_BASE_URL}/anlagen`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
@@ -121,7 +129,7 @@ const OfferModule = ({ user }) => {
 
   const loadClients = async () => {
     try {
-      const response = await fetch('/api/kunden', {
+      const response = await fetch(`${API_BASE_URL}/customer`, {
         headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
       });
       if (response.ok) {
@@ -234,7 +242,7 @@ const OfferModule = ({ user }) => {
         version: 1
       };
 
-      const response = await fetch('/api/angebote', {
+      const response = await fetch(`${API_BASE_URL}/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,24 +262,6 @@ const OfferModule = ({ user }) => {
           }, user?.id);
         } catch (historyError) {
           console.log('History tracking failed, continuing without history');
-        }
-        
-        // Generate PDF after saving (optional)
-        try {
-          const pdfResponse = await fetch(`/api/angebote/${result.id}/pdf`, {
-            headers: { 'Authorization': `Bearer ${await authService.getValidToken()}` }
-          });
-          
-          if (pdfResponse.ok) {
-            const blob = await pdfResponse.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Angebot_${offerData.nummer}.pdf`;
-            a.click();
-          }
-        } catch (pdfError) {
-          console.log('PDF generation failed, continuing without PDF');
         }
         
         alert('Angebot wurde erfolgreich erstellt!');
@@ -316,11 +306,33 @@ const OfferModule = ({ user }) => {
   const sendOffer = async (offerId) => {
     if (!window.confirm('Möchten Sie dieses Angebot wirklich an den Kunden versenden?')) return;
 
-    const updatedOffers = offers.map(o => 
-      o.id === offerId ? { ...o, status: 'versendet', sent_at: Date.now() } : o
-    );
+    const offer = offers.find(o => o.id === offerId);
+    if (!offer) return;
+
+    const updatedOffer = { ...offer, status: 'versendet', sent_at: Date.now() };
+    
+    // Update local state
+    const updatedOffers = offers.map(o => o.id === offerId ? updatedOffer : o);
     setOffers(updatedOffers);
     localStorage.setItem('admin_offers', JSON.stringify(updatedOffers));
+    
+    // Update database
+    try {
+      const response = await fetch(`${API_BASE_URL}/offers/${offerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await authService.getValidToken()}`
+        },
+        body: JSON.stringify(updatedOffer)
+      });
+      
+      if (response.ok) {
+        console.log('Offer sent to database successfully');
+      }
+    } catch (error) {
+      console.log('Database update failed, saved locally:', error);
+    }
     
     alert('Angebot wurde als versendet markiert!');
   };
@@ -536,11 +548,11 @@ const OfferModule = ({ user }) => {
       </div>
 
       {/* Service Requests für Angebotserstellung */}
-      {serviceRequests.length > 0 && (
+      {serviceRequests.filter(sr => !offers.some(o => o.service_anfrage_id === sr.id)).length > 0 && (
         <div style={{ backgroundColor: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
           <h3 style={{ marginBottom: '15px' }}>Serviceanfragen → Angebot erstellen</h3>
           <div style={{ display: 'grid', gap: '10px' }}>
-            {serviceRequests.slice(0, 3).map(sr => (
+            {serviceRequests.filter(sr => !offers.some(o => o.service_anfrage_id === sr.id)).slice(0, 3).map(sr => (
               <div key={sr.id} style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -597,7 +609,7 @@ const OfferModule = ({ user }) => {
                   {new Date(offer.created_at).toLocaleDateString('de-DE')}
                 </td>
                 <td style={{ padding: '12px', textAlign: 'right', fontWeight: '500' }}>
-                  €{offer.brutto?.toFixed(2) || '0.00'}
+                  €{(parseFloat(offer.brutto) || 0).toFixed(2)}
                 </td>
                 <td style={{ padding: '12px' }}>
                   {getStatusBadge(offer.status)}

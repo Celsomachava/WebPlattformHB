@@ -19,7 +19,7 @@ const Sidebar = ({ user }) => {
     {
       section: 'VERWALTUNG',
       items: [
-        { path: '/admin/customers', label: 'Kunden', icon: '👥' },
+        { path: '/admin/customers', label: 'Kundenverwaltung', icon: '👥' },
         { path: '/admin/anlagen', label: 'Anlagen', icon: '🏭' },
         { path: '/admin/datev', label: 'DATEV Export', icon: '📤' }
       ]

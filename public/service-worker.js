@@ -24,6 +24,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Skip API requests - let them go directly to network for real-time data
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -32,21 +37,9 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         
-        return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
+        return fetch(event.request).catch(() => {
+          // Return offline fallback if available
+          return caches.match('/');
         });
       })
   );

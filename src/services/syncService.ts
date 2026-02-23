@@ -1,10 +1,11 @@
+import { apiService } from './api.js';
+
 class SyncService {
   constructor() {
     this.isOnline = navigator.onLine;
     this.syncInProgress = false;
     this.retryAttempts = new Map();
     
-    // Auto-sync on online
     window.addEventListener('online', () => {
       this.isOnline = true;
       this.syncPending();
@@ -14,7 +15,6 @@ class SyncService {
       this.isOnline = false;
     });
 
-    // Register background sync if supported
     this.registerBackgroundSync();
   }
 
@@ -25,7 +25,6 @@ class SyncService {
     this.notifyStatusChange('syncing');
     
     try {
-      // Get pending submissions from IndexedDB
       const pending = await this.getPendingSubmissions();
       
       if (pending.length === 0) {
@@ -33,13 +32,17 @@ class SyncService {
         return;
       }
 
-      // Process FIFO (First In, First Out)
+      // Use batch sync endpoint
+      const requests = pending.map(p => this.transformPayload(p.formData));
+      const result = await apiService.syncServiceRequests(requests);
+      
+      // Mark all as synced
       for (const submission of pending) {
-        await this.syncSubmission(submission);
+        await this.updateSubmissionStatus(submission.id, 'synced');
       }
       
       this.notifyStatusChange('success');
-      this.simulateConfirmation(pending.length);
+      this.simulateConfirmation(result.count);
       
     } catch (error) {
       console.error('Sync failed:', error);
@@ -49,58 +52,7 @@ class SyncService {
     }
   }
 
-  async syncSubmission(submission) {
-    const maxRetries = 3;
-    const submissionId = submission.id;
-    const attempts = this.retryAttempts.get(submissionId) || 0;
-
-    try {
-      // Get auth headers securely
-      const authHeaders = this.getSecureAuthHeaders();
-      
-      // POST to API with auth token
-      const response = await fetch('/api/serviceanfrage', {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify(this.transformPayload(submission.formData))
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      // Mark as synced
-      await this.updateSubmissionStatus(submissionId, 'synced');
-      this.retryAttempts.delete(submissionId);
-      
-    } catch (error) {
-      const newAttempts = attempts + 1;
-      
-      if (newAttempts >= maxRetries) {
-        await this.updateSubmissionStatus(submissionId, 'error');
-        this.retryAttempts.delete(submissionId);
-      } else {
-        this.retryAttempts.set(submissionId, newAttempts);
-        // Exponential backoff
-        setTimeout(() => this.syncSubmission(submission), Math.pow(2, newAttempts) * 1000);
-      }
-      
-      throw error;
-    }
-  }
-
-  getSecureAuthHeaders() {
-    const token = this.getAuthToken();
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'Cache-Control': 'no-cache, no-store, must-revalidate'
-    };
-  }
-
   async getPendingSubmissions() {
-    // Simple IndexedDB access
     return new Promise((resolve) => {
       const request = indexedDB.open('heduschkaForms', 1);
       
@@ -144,21 +96,16 @@ class SyncService {
 
   transformPayload(formData) {
     return {
-      kunden_id: formData.kundendaten?.kunden_id || '',
-      anlagen_id: formData.anlagendaten?.anlagen_id || '',
+      anlagenId: formData.anlagendaten?.anlagen_id || '',
+      standort: formData.anlagendaten?.standort || '',
+      filtertyp: formData.anlagendaten?.anlagentyp || '',
+      qrCode: formData.anlagendaten?.qr_code || '',
       serviceart: formData.serviceangaben?.serviceart || '',
-      dringlichkeit: formData.serviceangaben?.dringlichkeit || '',
-      beschreibung: formData.serviceangaben?.beschreibung || '',
-      bemerkungen: formData.zusatzinformationen?.bemerkungen || '',
-      photos: formData.zusatzinformationen?.photos?.map(p => p.data) || [],
-      datenschutz_zustimmung: formData.rechtliches?.datenschutz_zustimmung || false,
-      agb_akzeptiert: formData.rechtliches?.agb_akzeptiert || false,
-      timestamp: Date.now()
+      dringlichkeit: formData.serviceangaben?.dringlichkeit || 'normal',
+      wunschtermin: formData.serviceangaben?.wunschtermin || null,
+      zeitfenster: formData.serviceangaben?.zeitfenster || '',
+      bemerkungen: formData.zusatzinformationen?.bemerkungen || ''
     };
-  }
-
-  getAuthToken() {
-    return localStorage.getItem('auth_token') || 'KUNDE_001';
   }
 
   async registerBackgroundSync() {
@@ -179,7 +126,6 @@ class SyncService {
   }
 
   simulateConfirmation(count) {
-    // Simulate email/push confirmation
     setTimeout(() => {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Heduschka Service', {
@@ -188,7 +134,6 @@ class SyncService {
         });
       }
       
-      // Log confirmation for demo
       console.log(`📧 Bestätigung: ${count} Anfrage(n) an Heduschka übermittelt`);
     }, 1000);
   }

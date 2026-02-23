@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiService } from '../../services/api';
 
 const CustomerServiceRequestsList = ({ user }) => {
   const [requests, setRequests] = useState([]);
@@ -11,21 +12,14 @@ const CustomerServiceRequestsList = ({ user }) => {
 
   const loadRequests = async () => {
     try {
-      // Try API first
-      const response = await fetch('http://localhost:3001/api/service/requests', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('heduschka_token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const apiRequests = await response.json();
-        const customerRequests = apiRequests.filter(r => 
-          r.kunden_id === (user?.customer_id || user?.kunden_id)
-        );
-        setRequests(customerRequests);
-        return;
-      }
+      const apiRequests = await apiService.getServiceRequests();
+      const userId = user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id;
+      const customerRequests = apiRequests.filter(r => 
+        r.kunden_id === userId || r.kundennummer === userId
+      );
+      setRequests(customerRequests);
+      setLoading(false);
+      return;
     } catch (error) {
       console.error('API error, using fallback:', error);
     }
@@ -36,8 +30,9 @@ const CustomerServiceRequestsList = ({ user }) => {
       const cached = JSON.parse(localStorage.getItem('admin_service_requests') || '[]');
       
       const allRequests = [...pending, ...cached];
+      const userId = user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id;
       const customerRequests = allRequests.filter(r => 
-        r.kunden_id === (user?.customer_id || user?.kunden_id)
+        r.kunden_id === userId || r.kundennummer === userId
       );
       
       setRequests(customerRequests);
@@ -115,10 +110,26 @@ const CustomerServiceRequestsList = ({ user }) => {
               </div>
             </div>
 
+            <div>
+              <h3 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>Kundendaten</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div><strong>Kundennummer:</strong> {selectedRequest.kunden_id}</div>
+                <div><strong>Firmenname:</strong> {selectedRequest.firmenname || '-'}</div>
+                <div><strong>Ansprechpartner:</strong> {selectedRequest.ansprechpartner || '-'}</div>
+                <div><strong>E-Mail:</strong> {selectedRequest.email || '-'}</div>
+                <div><strong>Telefon:</strong> {selectedRequest.telefon || '-'}</div>
+              </div>
+            </div>
+
             {selectedRequest.anlagen_id && (
               <div>
                 <h3 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>Anlagendaten</h3>
-                <div><strong>Anlagen-ID:</strong> {selectedRequest.anlagen_id}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div><strong>Anlagen-ID:</strong> {selectedRequest.anlagen_id}</div>
+                  <div><strong>Standort:</strong> {selectedRequest.standort || 'Nicht angegeben'}</div>
+                  <div><strong>Filtertyp:</strong> {selectedRequest.filtertyp || 'Nicht angegeben'}</div>
+                  <div><strong>QR-Code:</strong> {selectedRequest.qr_code || 'Nicht angegeben'}</div>
+                </div>
               </div>
             )}
 

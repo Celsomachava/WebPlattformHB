@@ -7,9 +7,10 @@
   "scripts": {
     "start": "concurrently \"cd Backend && npm run dev\" \"npm run dev\"",
     "dev": "vite",
+    "dev:frontend": "vite",
+    "dev:backend": "cd Backend && npm run dev",
     "build": "vite build",
     "preview": "vite preview",
-    "start:full": "concurrently \"cd Backend && npm run dev\" \"npm run dev\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

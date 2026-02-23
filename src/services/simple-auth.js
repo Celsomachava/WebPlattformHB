@@ -1,5 +1,9 @@
-// Simple Auth Service Fallback
+// Database-only Auth Service
 import { apiService } from './api.js';
+
+let tokenValidationCache = null;
+let tokenValidationPromise = null;
+const CACHE_DURATION = 60000; // 1 minute
 
 export const authService = {
   async getCurrentUser() {
@@ -9,52 +13,61 @@ export const authService = {
     try {
       return await apiService.getCurrentUser();
     } catch (error) {
-      // Fallback to local storage
-      if (token && (token.startsWith('KUNDE_') || token.startsWith('ADMIN_'))) {
-        const [role, id] = token.split('_');
-        return {
-          id: token,
-          customer_id: token,
-          role: role === 'ADMIN' ? 'ADMIN_001' : 'KUNDE_XXX',
-          name: role === 'ADMIN' ? 'Admin User' : 'Max Mustermann',
-          email: role === 'ADMIN' ? 'admin@heduschka.de' : 'max.mustermann@mustermann.de',
-          phone: role === 'ADMIN' ? '+49 987 654321' : '+49 123 456789',
-          company: role === 'ADMIN' ? 'Heduschka GmbH' : 'Mustermann GmbH',
-          address: role === 'ADMIN' ? 'Industriestraße 10, 54321 Adminstadt' : 'Musterstraße 1, 12345 Musterstadt',
-          position: role === 'ADMIN' ? 'Administrator' : 'Geschäftsführer',
-          created_at: Date.now()
-        };
-      }
+      console.error('Failed to get current user:', error);
+      localStorage.removeItem('heduschka_token');
       return null;
     }
   },
 
-  async login(customerId) {
+  async login(customerId, password) {
     try {
-      const password = customerId === 'ADMIN_001' ? 'admin123' : 'demo123';
       const result = await apiService.login(customerId, password);
       localStorage.setItem('heduschka_token', result.token);
+      tokenValidationCache = { token: result.token, timestamp: Date.now() };
       return result;
     } catch (error) {
-      console.error('API error, using fallback:', error);
-      // Fallback
-      if (customerId && (customerId.startsWith('KUNDE_') || customerId.startsWith('ADMIN_'))) {
-        localStorage.setItem('heduschka_token', customerId);
-        return {
-          accessToken: 'demo-token',
-          refreshToken: 'demo-refresh',
-          expiresAt: Date.now() + (24 * 60 * 60 * 1000)
-        };
-      }
+      console.error('Login failed:', error);
       throw new Error('Invalid credentials');
     }
   },
 
   async logout() {
     localStorage.removeItem('heduschka_token');
+    tokenValidationCache = null;
+    tokenValidationPromise = null;
   },
 
   async getValidToken() {
-    return localStorage.getItem('heduschka_token') || 'demo-token';
+    const token = localStorage.getItem('heduschka_token');
+    if (!token) throw new Error('No token available');
+    
+    // Return cached token if still valid
+    if (tokenValidationCache && 
+        tokenValidationCache.token === token && 
+        Date.now() - tokenValidationCache.timestamp < CACHE_DURATION) {
+      return token;
+    }
+    
+    // Reuse pending validation promise to prevent duplicate requests
+    if (tokenValidationPromise) {
+      await tokenValidationPromise;
+      return token;
+    }
+    
+    tokenValidationPromise = (async () => {
+      try {
+        await apiService.validateToken(token);
+        tokenValidationCache = { token, timestamp: Date.now() };
+      } catch (error) {
+        localStorage.removeItem('heduschka_token');
+        tokenValidationCache = null;
+        throw new Error('Invalid token');
+      } finally {
+        tokenValidationPromise = null;
+      }
+    })();
+    
+    await tokenValidationPromise;
+    return token;
   }
 };

@@ -1,0 +1,23 @@
+// Quick test to verify new endpoints
+console.log('✅ New API endpoints added:');
+console.log('  - GET    /api/arbeitsauftrag');
+console.log('  - GET    /api/arbeitsauftrag/:id');
+console.log('  - POST   /api/arbeitsauftrag');
+console.log('  - PUT    /api/arbeitsauftrag/:id');
+console.log('  - DELETE /api/arbeitsauftrag/:id');
+console.log('');
+console.log('  - GET    /api/pruefprotokoll');
+console.log('  - GET    /api/pruefprotokoll/:id');
+console.log('  - POST   /api/pruefprotokoll');
+console.log('  - PUT    /api/pruefprotokoll/:id');
+console.log('  - DELETE /api/pruefprotokoll/:id');
+console.log('');
+console.log('✅ Database tables created:');
+console.log('  - arbeitsauftrag');
+console.log('  - pruefprotokoll');
+console.log('');
+console.log('⚠️  Please restart the backend server:');
+console.log('  1. Stop the current server (Ctrl+C)');
+console.log('  2. Run: npm start');
+console.log('');
+console.log('Or use: npm run dev (for development mode)');

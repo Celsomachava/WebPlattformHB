@@ -184,7 +184,7 @@ const ServiceRequestsOverview = ({ user }) => {
             <div>
               <h3 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>Kundendaten</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div><strong>Kunden-ID:</strong> {selectedRequest.kunden_id}</div>
+                <div><strong>Kundennummer:</strong> {selectedRequest.kunden_id}</div>
                 <div><strong>Firmenname:</strong> {selectedRequest.firmenname || '-'}</div>
                 <div><strong>Ansprechpartner:</strong> {selectedRequest.ansprechpartner || '-'}</div>
                 <div><strong>E-Mail:</strong> {selectedRequest.email || '-'}</div>
@@ -194,7 +194,12 @@ const ServiceRequestsOverview = ({ user }) => {
 
             <div>
               <h3 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>Anlagendaten</h3>
-              <div><strong>Anlagen-ID:</strong> {selectedRequest.anlagen_id || 'Nicht angegeben'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div><strong>Anlagen-ID:</strong> {selectedRequest.anlagen_id || 'Nicht angegeben'}</div>
+                <div><strong>Standort:</strong> {selectedRequest.standort || 'Nicht angegeben'}</div>
+                <div><strong>Filtertyp:</strong> {selectedRequest.filtertyp || 'Nicht angegeben'}</div>
+                <div><strong>QR-Code:</strong> {selectedRequest.qr_code || 'Nicht angegeben'}</div>
+              </div>
             </div>
 
             <div>
@@ -227,7 +232,16 @@ const ServiceRequestsOverview = ({ user }) => {
                     const newStatus = e.target.value;
                     updateStatus(selectedRequest.id, newStatus);
                   }}
-                  style={{ padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', flex: 1, maxWidth: '300px' }}
+                  disabled={selectedRequest.status === 'abgeschlossen'}
+                  style={{ 
+                    padding: '12px', 
+                    border: '1px solid #ced4da', 
+                    borderRadius: '4px', 
+                    flex: 1, 
+                    maxWidth: '300px',
+                    cursor: selectedRequest.status === 'abgeschlossen' ? 'not-allowed' : 'pointer',
+                    backgroundColor: selectedRequest.status === 'abgeschlossen' ? '#e9ecef' : 'white'
+                  }}
                 >
                   <option value="neu">Neu</option>
                   <option value="bearbeitet">Bearbeitet</option>
@@ -236,7 +250,9 @@ const ServiceRequestsOverview = ({ user }) => {
                 </select>
               </div>
               <div style={{ marginTop: '10px', fontSize: '13px', color: '#6c757d', fontStyle: 'italic' }}>
-                Der Status wird automatisch aktualisiert, wenn Sie eine Option auswählen.
+                {selectedRequest.status === 'abgeschlossen' 
+                  ? 'Abgeschlossene Anfragen können nicht mehr bearbeitet werden.'
+                  : 'Der Status wird automatisch aktualisiert, wenn Sie eine Option auswählen.'}
               </div>
             </div>
 

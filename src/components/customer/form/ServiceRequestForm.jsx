@@ -3,7 +3,7 @@ import { authService } from '../../../services/simple-auth';
 
 const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   const [formData, setFormData] = useState({
-    kunden_id: user?.customer_id || user?.kunden_id || '',
+    kunden_id: user?.id || user?.kundennummer || user?.customer_id || user?.kunden_id || '',
     anlagen_id: preSelectedAsset?.id || '',
     standort: preSelectedAsset?.standort || '',
     filtertyp: preSelectedAsset?.filtertyp || '',
@@ -28,13 +28,15 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   const fileInputRef = useRef(null);
 
   const isCustomer = user?.role === 'KUNDE_XXX';
+  const isAdmin = user?.role === 'admin' || user?.id === 'ADMIN_001';
 
   useEffect(() => {
-    if (isCustomer) {
-      const kundenId = user?.customer_id || user?.kunden_id;
+    const kundenId = user?.customer_id || user?.kunden_id || user?.kundennummer || user?.id;
+    if (kundenId) {
       setFormData(prev => ({ ...prev, kunden_id: kundenId }));
       loadCustomerData(kundenId);
-    } else {
+    }
+    if (!isCustomer) {
       loadClients();
     }
     loadInstallations();
@@ -309,7 +311,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
 
       if (!isOffline) {
         try {
-          const response = await fetch('/api/serviceanfrage', {
+          const response = await fetch('http://localhost:3002/api/serviceanfragen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -319,24 +321,23 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           });
           
           if (response.ok) {
-            // Successfully sent to server
             localStorage.removeItem('service_request_draft');
+            alert('Serviceanfrage erfolgreich erstellt!');
             window.location.href = '/customer/dashboard';
             return;
           } else {
             throw new Error('Server error');
           }
         } catch (e) {
-          console.log('Server update failed, saving offline');
-          // Only save to pending if server fails
+          console.error('API error, saving offline:', e);
           const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
           pending.push(requestData);
           localStorage.setItem('pending_service_requests', JSON.stringify(pending));
           localStorage.removeItem('service_request_draft');
+          alert('Serviceanfrage wurde offline gespeichert und wird synchronisiert, sobald Sie online sind.');
           window.location.href = '/customer/dashboard';
         }
       } else {
-        // Offline mode - save to pending
         const pending = JSON.parse(localStorage.getItem('pending_service_requests') || '[]');
         pending.push(requestData);
         localStorage.setItem('pending_service_requests', JSON.stringify(pending));
@@ -353,26 +354,28 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
   };
 
   return (
-    <div style={{ marginLeft: '250px', marginTop: '60px', padding: '20px' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ marginLeft: '-50px', marginTop: '60px', padding: '30px', background: '#f8f9fa', minHeight: 'calc(100vh - 60px)' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ margin: '0 0 10px 0', color: '#333' }}>Serviceanfrage</h1>
+          <h1 style={{ margin: '0 0 8px 0', color: '#2c3e50', fontSize: '28px', fontWeight: '600' }}>Serviceanfrage erstellen</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ 
-              padding: '4px 8px', 
+              padding: '4px 10px', 
               borderRadius: '12px', 
               fontSize: '12px',
-              backgroundColor: isOffline ? '#dc3545' : '#28a745',
+              fontWeight: '500',
+              background: isOffline ? '#dc3545' : '#28a745',
               color: 'white'
             }}>
               {isOffline ? 'Offline' : 'Online'}
             </span>
             {isDraft && (
               <span style={{ 
-                padding: '4px 8px', 
+                padding: '4px 10px', 
                 borderRadius: '12px', 
                 fontSize: '12px',
-                backgroundColor: '#ffc107',
+                fontWeight: '500',
+                background: '#ffc107',
                 color: '#000'
               }}>
                 Entwurf gespeichert
@@ -382,70 +385,89 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
         </div>
 
         <div style={{
-          backgroundColor: 'white',
+          background: 'white',
           borderRadius: '8px',
           padding: '30px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           marginBottom: '20px'
         }}>
+          {/* Customer Filter - Admin Only */}
+          {isAdmin && (
+            <div style={{ marginBottom: '40px' }}>
+              <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>Kundenauswahl</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kunde auswählen *</label>
+                  <select 
+                    value={formData.kunden_id} 
+                    onChange={(e) => {
+                      const kundenId = e.target.value;
+                      setFormData(prev => ({ ...prev, kunden_id: kundenId }));
+                      loadCustomerData(kundenId);
+                    }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                  >
+                    <option value="">Bitte wählen...</option>
+                    {clients.map(client => (
+                      <option key={client.kundennummer} value={client.kundennummer}>
+                        {client.kundennummer} - {client.firmenname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Oder Kunden-ID eingeben</label>
+                  <input 
+                    type="text"
+                    value={formData.kunden_id}
+                    onChange={(e) => {
+                      const kundenId = e.target.value;
+                      setFormData(prev => ({ ...prev, kunden_id: kundenId }));
+                      if (kundenId) loadCustomerData(kundenId);
+                    }}
+                    placeholder="z.B. KUNDE_001"
+                    style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Kundendaten */}
           <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>1. Kundendaten</h3>
+            <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>1. Kundendaten</h3>
             
-            {!isCustomer && (
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kunden-ID auswählen *</label>
-                <select
-                  value={formData.kunden_id}
-                  onChange={(e) => {
-                    handleInputChange('kunden_id', e.target.value);
-                    loadCustomerData(e.target.value);
-                  }}
-                  required
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px' }}
-                >
-                  <option value="">Kunde auswählen...</option>
-                  {clients.map(client => (
-                    <option key={client.id || client.kundennummer} value={client.kundennummer}>
-                      {client.kundennummer} - {client.firmenname}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            {formData.kunden_id && (
-              <>
-                <small style={{ color: '#6c757d', fontSize: '12px', display: 'block', marginBottom: '15px' }}>Diese Daten sind schreibgeschützt und können nur vom Administrator geändert werden</small>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            {formData.kunden_id && customerData.firmenname && (
+              <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '20px', border: '1px solid #dee2e6' }}>
+                <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #dee2e6' }}>
+                  <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '4px' }}>Kunden-ID</div>
+                  <div style={{ fontSize: '16px', color: '#2c3e50', fontWeight: '600' }}>{formData.kunden_id}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Kundennummer</label>
-                    <input type="text" value={formData.kunden_id} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                    <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '4px' }}>Firmenname</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50', fontWeight: '500' }}>{customerData.firmenname}</div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Firmenname</label>
-                    <input type="text" value={customerData.firmenname || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                    <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '4px' }}>Ansprechpartner</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50', fontWeight: '500' }}>{customerData.ansprechpartner}</div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Ansprechpartner</label>
-                    <input type="text" value={customerData.ansprechpartner || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                    <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '4px' }}>E-Mail</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50', fontWeight: '500' }}>{customerData.email}</div>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>E-Mail</label>
-                    <input type="email" value={customerData.email || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Telefon</label>
-                    <input type="tel" value={customerData.telefon || ''} readOnly style={{ backgroundColor: '#e9ecef', width: '100%', padding: '12px', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'not-allowed' }} />
+                    <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '4px' }}>Telefon</div>
+                    <div style={{ fontSize: '15px', color: '#2c3e50', fontWeight: '500' }}>{customerData.telefon}</div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
           {/* Anlagendaten */}
           <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>2. Anlagendaten</h3>
+            <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>2. Anlagendaten</h3>
             
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>QR-Code scannen (optional)</label>
@@ -522,7 +544,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
 
           {/* Service-Details */}
           <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>3. Service-Details</h3>
+            <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>3. Service-Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Serviceart *</label>
@@ -581,7 +603,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
 
           {/* Zusatzinformationen */}
           <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>4. Zusatzinformationen</h3>
+            <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>4. Zusatzinformationen</h3>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Bemerkungen</label>
               <textarea 
@@ -638,7 +660,7 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
 
           {/* Datenschutz */}
           <div style={{ marginBottom: '40px' }}>
-            <h3 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>5. Datenschutz & Bestätigung</h3>
+            <h3 style={{ marginBottom: '20px', color: '#2c3e50', fontSize: '18px', fontWeight: '600', paddingBottom: '10px', borderBottom: '2px solid #e9ecef' }}>5. Datenschutz & Bestätigung</h3>
             <div>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
                 <input 
@@ -658,17 +680,19 @@ const ServiceRequestForm = ({ user, preSelectedAsset }) => {
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '20px', borderTop: '1px solid #e9ecef' }}>
             <button
               onClick={handleSubmit}
               disabled={!validateForm() || isSubmitting}
               style={{
                 padding: '12px 24px',
                 border: 'none',
-                backgroundColor: validateForm() && !isSubmitting ? '#007bff' : '#6c757d',
+                background: validateForm() && !isSubmitting ? '#007bff' : '#6c757d',
                 color: 'white',
                 borderRadius: '4px',
-                cursor: validateForm() && !isSubmitting ? 'pointer' : 'not-allowed'
+                cursor: validateForm() && !isSubmitting ? 'pointer' : 'not-allowed',
+                fontSize: '14px',
+                fontWeight: '500'
               }}
             >
               {isSubmitting ? 'Wird übertragen...' : 'Serviceanfrage senden'}
